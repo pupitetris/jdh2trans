@@ -4,6 +4,9 @@ use 5.10.0;
 use strict;
 use warnings FATAL => 'all';
 
+use HTML::TreeBuilder 5 -weak; # Ensure weak references in use
+use Carp qw(croak);
+
 =head1 NAME
 
 Xam::Binding::Trans - Generate Enum mappings for Xamarin Studio binding library projects.
@@ -57,14 +60,28 @@ sub DESTROY {
 =head2 $obj->parse (dir, packages ...)
 
 Parse the structure of the given packages inside the dir path. Parse all packages found in the javaDoc
-if no packages are specified.
+if no packages are specified. Restricting packages to parse is a good idea since parsing methods
+within classes is expensive.
 
 =cut
 
 sub parse {
 	my $self = shift;
-	my $dir = shift;
+	my $dir = shift // croak 'dir not specified for parse method.';
 	my @packages = @_;
+
+	$self->{BASEDIR} = $dir;
+
+	$self->{PACKAGES} = $self->_parse_packages ();
+	$self->{CONSTS} = $self->_parse_constants ();
+
+	if (scalar @packages > 0) {
+		$self->{CLASSES} = $self->_parse_classes (\@packages);
+	} else {
+		$self->{CLASSES} = $self->_parse_classes ($self->{PACKAGES});
+	}
+
+	$self->{METHODS} = $self->_parse_methods ($self->{CLASSES});
 }
 
 =head2 $obj->outEnumFields (xml_file, packages ...)
@@ -131,5 +148,263 @@ limitations under the License.
 
 
 =cut
+
+our $EOL = "\r\n";
+
+# Utility routines.
+
+sub name_from_fullname {
+	my $fullname = shift;
+
+	$fullname =~ s/.*\.([^\.]+)/\1/;
+	return $fullname;
+}
+
+sub class_from_fullname {
+	my $fullname = shift;
+
+	$fullname =~ s/.*\.([A-Z][a-z0-9][^.]+).*/\1/;
+	return $fullname;
+}
+
+sub pkg_from_fullname {
+	my $fullname = shift;
+
+	$fullname =~ s/\.[A-Z].*//;
+	return $fullname;
+}
+
+sub type_qualify {
+	my $type = shift;
+	my $class = shift;
+	my $anchors = shift;
+
+	while ($type =~ /(^[A-Z]|<[A-Z])/) {
+		my $anchor = shift @$anchors;
+		my $title;
+		if ($anchor) {
+			$title = $anchor->attr('title');
+			$title =~ s/(class or interface|class|interface) in //;
+		} else {
+			$title = $class->{'PKG'};
+		}
+		$type =~ s/((^|<)([A-Z][a-zA-Z0-9_]))/\2$title.\3/;
+	}
+	return $type;
+}
+
+sub parse_proto {
+	my $ul = shift;
+	my $class = shift;
+	
+	my $pre = $ul->look_down (_tag => 'pre');
+
+	my $str = $pre->as_text ();
+	$str =~ tr/\xA0 \r\n/ /d; # transform nbsp into space and remove all other white-space.
+
+	# get visibility, return value and arguments
+	$str =~ /^(public|protected|) ?(static|) ?(?:([^ ]*) )?([^(]+)\(([^)]*)\)/;
+
+	my ($visibility, $static, $ret, $name, $args) = ($1, $2, $3, $4, $5);
+
+	my $type = ($name eq $class->{'NAME'})? 'ctor': 'method';
+
+	my @anchors = $pre->look_down (_tag => 'a');
+	$ret = &type_qualify ($ret, $class, \@anchors);
+
+
+	my @args = ();
+	foreach my $pair (split (',', $args)) {
+		my ($type, $name) = split (' ', $pair);
+		$type = &type_qualify ($type, $class, \@anchors);
+		push @args, { 'TYPE' => $type, 'NAME' => $name };
+	}
+
+	my $fullname = 
+		$class->{'FULLNAME'} . '.' . $name .
+		'(' . join (',', map { $_->{'TYPE'} } @args) . ')';
+
+	return {
+		'CLASS' => $class,
+		'TYPE' => $type,
+		'FULLNAME' => $fullname,
+		'VISIBILITY' => $visibility,
+		'STATIC' => $static,
+		'RETURN' => $ret,
+		'NAME' => $name,
+		'ARGS' => \@args
+		};
+}
+
+# Private methods
+
+sub _parse_packages {
+	my %packages = ();
+	open my $fd, "$self->{BASEDIR}/package-list" || croak "Package list file `$self->{BASEDIR}/package-list` not found.";
+	while (<$fd>) {
+		s/$EOL//;
+		$packages{$_} = { 'NAME' => $_ };
+	}
+	close $fd;
+	return \%packages;
+}
+
+sub _parse_constants {
+	my $self = shift;
+	my %consts = ();
+
+	my $tree = HTML::TreeBuilder->new_from_file ("$self->{BASEDIR}/constant-values.html");
+	$tree->elementify ();
+
+	# search inside all li items that have constants for a class/interface inside.
+	foreach my $li ($tree->look_down (_tag => 'li', class => qr/blockList.*/)) {
+		# each tr contains a constant.
+		foreach my $tr ($li->look_down (_tag => 'tr')) {
+			next if $tr->attr ('class') eq '';
+
+			my @codes = $tr->look_down (_tag => 'code');
+			my @content = $codes[0]->content_list;
+
+			my $value = ${$codes[2]->content}[0];
+
+			my $type = $content[0];
+			$type =~ s/public.static.final.//;
+
+			# We assume here that constants won't be complex types (usually just int or java.lang.String).
+			if ($type eq '') {
+				my $type_a = $content[1];
+				$type = $type_a->attr ('title');
+				$type =~ s/(class or interface|class|interface) in //;
+				$type .= '.' . ${$type_a->content}[0];
+
+				# type is probably a string, so try to remove quotes from value.
+				$value =~ s/(^"|"$)//g;
+			}
+
+			my $a = $tr->look_down (_tag => 'a');
+			my $fullname = $a->attr ('name');
+			$consts{$fullname} = {
+				'FULLNAME' => $fullname,
+				'NAME' => &name_from_fullname ($fullname),
+				'CLASS' => &class_from_fullname ($fullname),
+				'PKG' => &pkg_from_fullname ($fullname),
+				'TYPE' => $type,
+				'VALUE' => $value
+			};
+		}
+	}
+	return \%consts;
+}
+
+# Parse classes (and interfaces) for the given package.
+sub _parse_classes_from_pkg {
+	my $self = shift;
+	my $pkg = shift;
+	my $classes = shift // {};
+
+	my $pkg_path = $pkg;
+	$pkg_path =~ tr#.#/#;
+
+	my $fname = "$self->{BASEDIR}/$pkg_path/package-frame.html";
+
+	my $tree = HTML::TreeBuilder->new_from_file ($fname);
+	$tree->elementify ();
+	
+	my $index_container = $tree->look_down (class => 'indexContainer');
+	foreach my $a ($index_container->look_down (_tag => 'a')) {
+		my $type = $a->attr ('title');
+		$type =~ s/ .*//;
+
+		# The name is inside the a. Interface names are enclosed within italics.
+		my $name = ${$a->content}[0];
+		$name = ${$name->content}[0] if $type eq 'interface';
+		
+		my $fullname = $pkg . '.' . $name;
+		$classes->{$fullname} = {
+			'FULLNAME' => $fullname,
+			'PKG' => $pkg,
+			'NAME' => $name,
+			'TYPE' => $type
+		};
+	}
+
+	return $classes;
+}
+
+# Parse classes for the given packages.
+sub _parse_classes {
+	my $self = shift;
+	my $packages = shift;
+	my $classes = shift // {};
+
+	foreach my $pkg (sort keys %$packages) {
+		$self->_parse_classes_from_pkg ($pkg, $classes);
+	}
+
+	return $classes;
+}
+
+# Parse methods for the given class.
+sub _parse_methods_for_class {
+	my $self = shift;
+	my $class = shift;
+	my $methods = shift // {};
+
+	my %new_methods = ();
+	my %ctors = ();
+
+	my $pkg_path = $class->{'PKG'};
+	$pkg_path =~ tr#.#/#;
+
+	my $fname = "$self->{BASEDIR}/$pkg_path/" . $class->{'NAME'} . ".html";
+
+	my $tree = HTML::TreeBuilder->new_from_file ($fname);
+	$tree->elementify ();
+
+	# Check fields declared to be used by the class so we can account for them below.
+	my %fields = ();
+	my $field_a = $tree->look_down (_tag => 'a', name => 'field_detail');
+	if ($field_a) {
+		foreach my $h4 ($field_a->parent->look_down (_tag => 'h4')) {
+			$fields {${$h4->content}[0]} = 1;
+		}
+	}
+
+	my $ctor_a = $tree->look_down (_tag => 'a', name => 'constructor_detail');
+	if ($ctor_a) {
+		foreach my $ul ($ctor_a->parent->look_down (_tag => 'ul', class => qr/blockList.*/)) {
+			my $proto = &parse_proto ($ul, $class);
+			$ctors{$proto->{'FULLNAME'}} = $proto;
+			$methods->{$proto->{'FULLNAME'}} = $proto;
+		}
+	}
+
+	my $method_a = $tree->look_down (_tag => 'a', name => 'method_detail');
+	if ($method_a) {
+		foreach my $ul ($method_a->parent->look_down (_tag => 'ul', class => qr/blockList.*/)) {
+			my $proto = &parse_proto ($ul, $class);
+			$new_methods{$proto->{'FULLNAME'}} = $proto;
+			$methods->{$proto->{'FULLNAME'}} = $proto;
+		}
+	}
+
+	$class->{'CTORS'} = \%ctors;
+	$class->{'METHODS'} = \%new_methods;
+	
+	return $methods;
+}
+
+# Parse methods for the given classes.
+sub _parse_methods {
+	my $self = shift;
+	my $classes = shift;
+	my $methods = shift // {};
+
+	foreach my $class (sort keys %$classes) {
+		$self->_parse_methods_for_class ($classes->{$class}, $methods);
+	}
+
+	return $methods;
+}
 
 1; # End of Xam::Binding::Trans
