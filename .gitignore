@@ -14,3 +14,11 @@ META.yml
 MYMETA.yml
 nytprof.out
 pm_to_blib
+
+# Mac junk
+.DS_Store
+
+# emacs temp files and backups:
+[#]*[#]
+.\#*
+*~
