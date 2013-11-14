@@ -19,11 +19,11 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
-This module exports an object that can read javaDoc HTML files and output
-inferred enumerations and methods which use such enumerations in XML mapping
-files used in Xamarin Studio binding libraries.
+This module implements a class for enumeration mapping generation. An object 
+from this class can read javaDoc HTML files and output XML mapping files
+describing inferred enumerations and those methods which use these enumerations.
 
-Perhaps a little code snippet.
+Code sample:
 
     use Xam::Binding::Trans;
 
@@ -92,6 +92,12 @@ sub outEnumMethods {
 	my $xml_file = shift;
 	my @packages = @_;
 }
+
+=head1 SEE ALSO
+
+    "Binding a Java Library (.jar)" from Xamarin, Inc.
+
+	L<http://docs.xamarin.com/guides/android/advanced_topics/java_integration_overview/binding_a_java_library_(.jar)/>
 
 =head1 AUTHOR
 
