@@ -8,7 +8,7 @@ all_from 'lib/Xam/Binding/Trans.pm';
 author   q{Arturo Espinosa <arturo.espinosa@xamarin.com>};
 license  'apache';
 
-perl_version 5.10;
+perl_version '5.10';
 
 tests_recursive('t');
 
