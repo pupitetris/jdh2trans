@@ -1,6 +1,6 @@
 package Xam::Binding::Trans;
 
-use 5.10;
+use 5.10.0;
 use strict;
 use warnings FATAL => 'all';
 
