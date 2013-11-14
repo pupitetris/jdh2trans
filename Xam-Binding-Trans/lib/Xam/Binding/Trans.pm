@@ -156,14 +156,14 @@ our $EOL = "\r\n";
 sub name_from_fullname {
 	my $fullname = shift;
 
-	$fullname =~ s/.*\.([^\.]+)/\1/;
+	$fullname =~ s/.*\.([^\.]+)/$1/;
 	return $fullname;
 }
 
 sub class_from_fullname {
 	my $fullname = shift;
 
-	$fullname =~ s/.*\.([A-Z][a-z0-9][^.]+).*/\1/;
+	$fullname =~ s/.*\.([A-Z][a-z0-9][^.]+).*/$1/;
 	return $fullname;
 }
 
@@ -188,7 +188,7 @@ sub type_qualify {
 		} else {
 			$title = $class->{'PKG'};
 		}
-		$type =~ s/((^|<)([A-Z][a-zA-Z0-9_]))/\2$title.\3/;
+		$type =~ s/((^|<)([A-Z][a-zA-Z0-9_]))/$2$title.$3/;
 	}
 	return $type;
 }
@@ -210,8 +210,7 @@ sub parse_proto {
 	my $type = ($name eq $class->{'NAME'})? 'ctor': 'method';
 
 	my @anchors = $pre->look_down (_tag => 'a');
-	$ret = &type_qualify ($ret, $class, \@anchors);
-
+	$ret = &type_qualify ($ret, $class, \@anchors) if defined $ret;
 
 	my @args = ();
 	foreach my $pair (split (',', $args)) {
@@ -239,6 +238,7 @@ sub parse_proto {
 # Private methods
 
 sub _parse_packages {
+	my $self = shift;
 	my %packages = ();
 	open my $fd, "$self->{BASEDIR}/package-list" || croak "Package list file `$self->{BASEDIR}/package-list` not found.";
 	while (<$fd>) {
@@ -260,7 +260,7 @@ sub _parse_constants {
 	foreach my $li ($tree->look_down (_tag => 'li', class => qr/blockList.*/)) {
 		# each tr contains a constant.
 		foreach my $tr ($li->look_down (_tag => 'tr')) {
-			next if $tr->attr ('class') eq '';
+			next if !defined $tr->attr('class') || $tr->attr ('class') eq '';
 
 			my @codes = $tr->look_down (_tag => 'code');
 			my @content = $codes[0]->content_list;

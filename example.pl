@@ -12,7 +12,7 @@ use Data::Dumper;
 use Xam::Binding::Trans;
 
 # Command-line arguments.
-$BASEDIR = $ARGV[0]; # Base directory for the HTML documentation.
+my $BASEDIR = $ARGV[0]; # Base directory for the HTML documentation.
 
 die 'BASEDIR not specified' if $BASEDIR eq '';
 
