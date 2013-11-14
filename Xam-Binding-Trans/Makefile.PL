@@ -13,11 +13,10 @@ perl_version '5.10';
 tests_recursive('t');
 
 resources (
-   #homepage   => 'http://yourwebsitehere.com',
-   #IRC        => 'irc://irc.perl.org/#Xam-Binding-Trans',
+   homepage   => 'https://github.com/pupitetris/jdh2trans',
    license    => 'http://www.apache.org/licenses/LICENSE-2.0',
-   #repository => 'git://github.com/Arturo Espinosa/Xam-Binding-Trans.git',
-   bugtracker => 'http://rt.cpan.org/NoAuth/Bugs.html?Dist=Xam-Binding-Trans',
+   repository => 'git://github.com/Arturo Espinosa/Xam-Binding-Trans.git',
+   bugtracker => 'https://github.com/pupitetris/jdh2trans/issues',
 );
 
 configure_requires (
@@ -29,10 +28,9 @@ build_requires (
 );
 
 requires (
-   #'ABC'              => 1.6,
-   #'Foo::Bar::Module' => 5.0401,
+  'HTML::TreeBuilder' => 5,
 );
 
-install_as_cpan;
+install_as_site;
 auto_install;
 WriteAll;
