@@ -47,7 +47,14 @@ Constructor. Creates a new mapper object.
 
 sub new {
 	my $class = shift;
-	my $self = {};
+	my $self = {
+		BASEDIR => '',
+		PACKAGES => {},
+		CONSTS => {},
+		CLASSES => {},
+		METHODS => {},
+		ENUMS => {}
+	};
 	bless $self, $class;
 	return $self;
 }
@@ -193,7 +200,62 @@ sub type_qualify {
 	return $type;
 }
 
-sub parse_proto {
+# Private methods
+
+# The good stuff.
+sub _type_enum_test {
+	my $self = shift;
+	my $dd = shift;
+	my $class = shift;
+
+	return 'int';
+}
+
+sub _type_qualify {
+	my $self = shift;
+	my $type = shift;
+	my $class = shift;
+	my $anchors = shift;
+	my $ul = shift;
+	my $argno = shift;
+
+	$type = &type_qualify ($type, $class, $anchors);
+	return $type if $type ne 'int';
+
+	# OK, the type is an int, try to see if it is an enum.
+	
+	# Get the element with the definitions.
+	my $dl = $ul->look_down (_tag => 'dl');
+	return 'int' if !defined $dl;
+
+	my $subtitle = ($argno < 0)?
+		'Returns:': 
+		'Parameters:';
+
+	# Find the definition for the argument/return value we are analyzing.
+	my $found_dt = 0;
+	my $thisarg = 0;
+	foreach my $d ($dl->look_down (_tag => qr/d[td]/)) {
+		if ($d->tag eq 'dt') {
+			# The right dt already found and this is another dt, we failed.
+			last if $found_dt;
+
+			$found_dt = 1 if $d->as_text () eq $subtitle;
+			next;
+		}
+		next if !$found_dt;
+		if ($argno < 0 || $thisarg == $argno) {
+			return $self->_type_enum_test ($d, $class);
+		}
+		$thisarg ++;
+	}
+	
+	# We couldn't find the definition. Assume it's an ordinary int then.
+	return 'int';
+}
+
+sub _parse_proto {
+	my $self = shift;
 	my $ul = shift;
 	my $class = shift;
 	
@@ -210,13 +272,15 @@ sub parse_proto {
 	my $type = ($name eq $class->{'NAME'})? 'ctor': 'method';
 
 	my @anchors = $pre->look_down (_tag => 'a');
-	$ret = &type_qualify ($ret, $class, \@anchors) if defined $ret;
+	$ret = $self->_type_qualify ($ret, $class, \@anchors, $ul, -1) if defined $ret;
 
 	my @args = ();
+	my $argno = 0;
 	foreach my $pair (split (',', $args)) {
 		my ($type, $name) = split (' ', $pair);
-		$type = &type_qualify ($type, $class, \@anchors);
+		$type = $self->_type_qualify ($type, $class, \@anchors, $ul, $argno);
 		push @args, { 'TYPE' => $type, 'NAME' => $name };
+		$argno++;
 	}
 
 	my $fullname = 
@@ -234,8 +298,6 @@ sub parse_proto {
 		'ARGS' => \@args
 		};
 }
-
-# Private methods
 
 sub _parse_packages {
 	my $self = shift;
@@ -373,7 +435,7 @@ sub _parse_methods_for_class {
 	my $ctor_a = $tree->look_down (_tag => 'a', name => 'constructor_detail');
 	if ($ctor_a) {
 		foreach my $ul ($ctor_a->parent->look_down (_tag => 'ul', class => qr/blockList.*/)) {
-			my $proto = &parse_proto ($ul, $class);
+			my $proto = $self->_parse_proto ($ul, $class);
 			$ctors{$proto->{'FULLNAME'}} = $proto;
 			$methods->{$proto->{'FULLNAME'}} = $proto;
 		}
@@ -382,7 +444,7 @@ sub _parse_methods_for_class {
 	my $method_a = $tree->look_down (_tag => 'a', name => 'method_detail');
 	if ($method_a) {
 		foreach my $ul ($method_a->parent->look_down (_tag => 'ul', class => qr/blockList.*/)) {
-			my $proto = &parse_proto ($ul, $class);
+			my $proto = $self->_parse_proto ($ul, $class);
 			$new_methods{$proto->{'FULLNAME'}} = $proto;
 			$methods->{$proto->{'FULLNAME'}} = $proto;
 		}
