@@ -83,7 +83,8 @@ sub parse {
 	$self->{CONSTS} = $self->_parse_constants ();
 
 	if (scalar @packages > 0) {
-		$self->{CLASSES} = $self->_parse_classes (\@packages);
+		my %pkgs = map { $_ => $self->{PACKAGES}->{$_} } @packages;
+		$self->{CLASSES} = $self->_parse_classes (\%pkgs);
 	} else {
 		$self->{CLASSES} = $self->_parse_classes ($self->{PACKAGES});
 	}
@@ -223,6 +224,7 @@ sub _type_qualify {
 	return $type if $type ne 'int';
 
 	# OK, the type is an int, try to see if it is an enum.
+	# If something fails, assume the type is an ordinary int.
 	
 	# Get the element with the definitions.
 	my $dl = $ul->look_down (_tag => 'dl');
@@ -237,7 +239,7 @@ sub _type_qualify {
 	my $thisarg = 0;
 	foreach my $d ($dl->look_down (_tag => qr/d[td]/)) {
 		if ($d->tag eq 'dt') {
-			# The right dt already found and this is another dt, we failed.
+			# The right dt has already been found and this is another dt, we failed.
 			last if $found_dt;
 
 			$found_dt = 1 if $d->as_text () eq $subtitle;
@@ -245,6 +247,7 @@ sub _type_qualify {
 		}
 		next if !$found_dt;
 		if ($argno < 0 || $thisarg == $argno) {
+			# OK, this dd has got the stuff we are looking for.
 			return $self->_type_enum_test ($d, $class);
 		}
 		$thisarg ++;
