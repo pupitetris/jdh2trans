@@ -5,7 +5,7 @@ use strict;
 use warnings FATAL => 'all';
 
 use HTML::TreeBuilder 5 -weak; # Ensure weak references in use
-use Carp qw(croak);
+use Carp qw(croak carp);
 
 =head1 NAME
 
@@ -118,6 +118,18 @@ sub outEnumMethods {
 	my @packages = @_;
 }
 
+=head1 CONFIGURATION
+
+=head2 ENUM_IGNORE_VALUES_FOR_ENUM_NAME
+
+A hash whose keys indicate enum values that will not be used to infer enumeration names.
+
+=cut
+
+my %ENUM_IGNORE_VALUES_FOR_ENUM_NAME = (
+	'SUCCESS' => 1
+	);
+
 =head1 SEE ALSO
 
     "Binding a Java Library (.jar)" from Xamarin, Inc.
@@ -171,7 +183,7 @@ sub name_from_fullname {
 sub class_from_fullname {
 	my $fullname = shift;
 
-	$fullname =~ s/.*\.([A-Z][a-z0-9][^.]+).*/$1/;
+	$fullname =~ s/.*\.([A-Z]+[a-z0-9][^.]+).*/$1/;
 	return $fullname;
 }
 
@@ -194,7 +206,7 @@ sub type_qualify {
 			$title = $anchor->attr('title');
 			$title =~ s/(class or interface|class|interface) in //;
 		} else {
-			$title = $class->{'PKG'};
+			$title = $class->{PKG};
 		}
 		$type =~ s/((^|<)([A-Z][a-zA-Z0-9_]))/$2$title.$3/;
 	}
@@ -204,10 +216,169 @@ sub type_qualify {
 # Private methods
 
 # The good stuff.
+
+# Merge the enum key/value pairs into the existing enums.
+sub _enums_merge {
+	my $self = shift;
+	my $enum = shift;
+
+	my $fullname = $enum->{FULLNAME};
+
+	my $orig = $self->{ENUMS}->{$fullname};
+	return $self->{ENUMS}->{$fullname} = $enum if !$orig;
+
+	my $orig_pairs = $orig->{PAIRS};
+	my $enum_pairs = $enum->{PAIRS};
+
+	foreach my $k (keys %$orig_pairs) {
+		if (exists $enum_pairs->{$k} && 
+			$orig_pairs->{$k} ne $enum_pairs->{$k}) {
+			carp "Incompatible enums $fullname";
+		}
+	}
+
+	foreach my $k (keys %$enum_pairs) {
+		if (exists $orig_pairs->{$k}) {
+			if ($orig_pairs->{$k} ne $enum_pairs->{$k}) {
+				carp "Incompatible enums $fullname";
+			}
+		} else {
+			$orig_pairs->{$k} = $enum_pairs->{$k};
+		}
+	}
+
+	return $orig;
+}
+
+# Easy enums that use the same class
+sub _create_enum_straight {
+	my $self = shift;
+	my $values = shift;
+
+	my $a_const = $values->{(keys %$values)[0]};
+
+	# Find the number of words that compose the max common prefix
+	# among the received values.
+	my $name_min_idx = 999;
+	my $prev_words;
+	foreach my $key (keys %$values) {
+		my $value = $values->{$key};
+		next if exists $ENUM_IGNORE_VALUES_FOR_ENUM_NAME{$value->{NAME}};
+
+		my @words = split ('_', $value->{NAME});
+
+		# On first iteration we just get something to compare with and skip.
+		if (ref $prev_words ne 'ARRAY') {
+			$prev_words = \@words;
+			next;
+		}
+
+		my $i;
+		for ($i = 0; $i < scalar @words && $i < $name_min_idx; $i++) {
+			last if $words[$i] ne $prev_words->[$i];
+		}
+		$name_min_idx = $i if $i < $name_min_idx;
+		last if $i <= 1; # can't be smaller, so we quit at this point.
+	}
+
+	if ($name_min_idx < 1) {
+		# Warning: no common prefix suitable for a name.
+		carp "No max common prefix found for enum name";
+		return;
+	}
+
+	# We reuse prev_words, since any of the names should contain the max common prefix.
+	my @res = (@$prev_words)[0 .. $name_min_idx - 1];
+	if (scalar @res == 0) {
+		$DB::single = 1;
+	}
+	my $name = join ('_', (@$prev_words)[0 .. $name_min_idx - 1]);
+	
+	my %pairs = ();
+	foreach my $key (keys %$values) {
+		my $value = $values->{$key};
+		my $valkey;
+	    if (exists $ENUM_IGNORE_VALUES_FOR_ENUM_NAME{$value->{NAME}}) {
+			$valkey = $value->{NAME};
+		} else {
+			$valkey = substr ($value->{NAME}, length ($name) + 1);
+		}
+		
+		$pairs{$value->{VALUE}} = $valkey;
+	}
+
+	my $enum = bless {
+		CLASS => $a_const->{CLASS},
+		PKG => $a_const->{PKG},
+		NAME => $name,
+		FULLNAME => $a_const->{PKG} . '.' . $a_const->{CLASS} . '.' . $name,
+		PAIRS => \%pairs
+	 }, 'ENUM';
+
+	return $self->_enums_merge ($enum);
+}
+
 sub _type_enum_test {
 	my $self = shift;
 	my $dd = shift;
 	my $class = shift;
+
+	my @toks = split (/\s*[\s,*]\s*/, $dd->format);
+
+	my %values = ();
+	my %prefix_hist = (); # package-class concats.
+	my $found = 0;
+	foreach my $tok (@toks) {
+		# If it looks like a constant and we aren't repeating...
+		if ($tok =~ /^[a-zA-Z0-9.]*[A-Z0-9_]+$/ && ! exists $values{$tok}) {
+			foreach my $const_fullname (keys %{$self->{CONSTS}}) {
+				# Add const to results if it ends just like our token.
+				if ($const_fullname =~ /[_.]$tok$/) {
+					my $const = $self->{CONSTS}->{$const_fullname};
+					next if $const->{TYPE} ne 'int';
+
+					my $classname = $const->{PKG} . '.' . $const->{CLASS};
+					$prefix_hist{$classname} = {} if !exists $prefix_hist{$classname};
+					$prefix_hist{$classname}->{$tok} = $const;
+
+					if (exists $values{$tok}) {
+						if (ref $values{$tok} ne 'ARRAY') {
+							$values{$tok} = [$values{$tok}];
+						}
+						push @{$values{$tok}}, $const;
+					} else {
+						$values{$tok} = $const;
+					}
+					$found ++;
+				}
+			}
+		}
+	}
+
+	if ($found > 0) {
+		# We actually found candidates.
+		
+		# Give priority to current class.
+		my $hist_for_class = $prefix_hist{$class->{FULLNAME}};
+		if ($hist_for_class &&
+			scalar (keys %$hist_for_class) == scalar (keys %values)) {
+			# We got all of our bases covered with the consts we found in the current class.
+			return $self->_create_enum_straight ($hist_for_class);
+		}
+
+		if (scalar (keys %prefix_hist) == 1) {
+			# Only one prefix found, great!
+			if ($found == scalar (keys %values)) {
+				# No duplicate candidates, yay.
+				return $self->_create_enum_straight (\%values);
+			} else {
+				$DB::single = 1;
+				carp "Multiple candidates found";
+			}
+		}
+		$DB::single = 1;
+		carp "More than one prefix";
+	}
 
 	return 'int';
 }
@@ -271,8 +442,9 @@ sub _parse_proto {
 	$str =~ /^(public|protected|) ?(static|) ?(?:([^ ]*) )?([^(]+)\(([^)]*)\)/;
 
 	my ($visibility, $static, $ret, $name, $args) = ($1, $2, $3, $4, $5);
+	#print "$class->{FULLNAME}.$name\n";
 
-	my $type = ($name eq $class->{'NAME'})? 'ctor': 'method';
+	my $type = ($name eq $class->{NAME})? 'ctor': 'method';
 
 	my @anchors = $pre->look_down (_tag => 'a');
 	$ret = $self->_type_qualify ($ret, $class, \@anchors, $ul, -1) if defined $ret;
@@ -287,8 +459,8 @@ sub _parse_proto {
 	}
 
 	my $fullname = 
-		$class->{'FULLNAME'} . '.' . $name .
-		'(' . join (',', map { $_->{'TYPE'} } @args) . ')';
+		$class->{FULLNAME} . '.' . $name .
+		'(' . join (',', map { $_->{TYPE} } @args) . ')';
 
 	return {
 		'CLASS' => $class,
@@ -418,10 +590,10 @@ sub _parse_methods_for_class {
 	my %new_methods = ();
 	my %ctors = ();
 
-	my $pkg_path = $class->{'PKG'};
+	my $pkg_path = $class->{PKG};
 	$pkg_path =~ tr#.#/#;
 
-	my $fname = "$self->{BASEDIR}/$pkg_path/" . $class->{'NAME'} . ".html";
+	my $fname = "$self->{BASEDIR}/$pkg_path/" . $class->{NAME} . ".html";
 
 	my $tree = HTML::TreeBuilder->new_from_file ($fname);
 	$tree->elementify ();
@@ -439,8 +611,8 @@ sub _parse_methods_for_class {
 	if ($ctor_a) {
 		foreach my $ul ($ctor_a->parent->look_down (_tag => 'ul', class => qr/blockList.*/)) {
 			my $proto = $self->_parse_proto ($ul, $class);
-			$ctors{$proto->{'FULLNAME'}} = $proto;
-			$methods->{$proto->{'FULLNAME'}} = $proto;
+			$ctors{$proto->{FULLNAME}} = $proto;
+			$methods->{$proto->{FULLNAME}} = $proto;
 		}
 	}
 
@@ -448,13 +620,13 @@ sub _parse_methods_for_class {
 	if ($method_a) {
 		foreach my $ul ($method_a->parent->look_down (_tag => 'ul', class => qr/blockList.*/)) {
 			my $proto = $self->_parse_proto ($ul, $class);
-			$new_methods{$proto->{'FULLNAME'}} = $proto;
-			$methods->{$proto->{'FULLNAME'}} = $proto;
+			$new_methods{$proto->{FULLNAME}} = $proto;
+			$methods->{$proto->{FULLNAME}} = $proto;
 		}
 	}
 
-	$class->{'CTORS'} = \%ctors;
-	$class->{'METHODS'} = \%new_methods;
+	$class->{CTORS} = \%ctors;
+	$class->{METHODS} = \%new_methods;
 	
 	return $methods;
 }
