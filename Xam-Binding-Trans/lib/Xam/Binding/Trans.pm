@@ -52,6 +52,7 @@ sub new {
 		CONSTS => {},
 		CLASSES => {},
 		METHODS => {},
+		FIELDS => {},
 		ENUMS => {}
 	};
 	bless $self, $class;
@@ -525,7 +526,6 @@ sub _parse_proto {
 	$str =~ /^(public|protected|) ?(static|) ?(?:([^ ]*) )?([^(]+)\(([^)]*)\)/;
 
 	my ($visibility, $static, $ret, $name, $args) = ($1, $2, $3, $4, $5);
-	#print "$class->{FULLNAME}.$name\n";
 
 	my $type = ($name eq $class->{NAME})? 'ctor': 'method';
 
@@ -667,6 +667,62 @@ sub _parse_classes {
 	return $classes;
 }
 
+sub _parse_fields_for_class {
+	my $self = shift;
+	my $class = shift;
+	my $tree = shift;
+	my $fields = shift // {};
+
+	# Check fields declared to be used by the class so we can account for them below.
+	my $field_a = $tree->look_down (_tag => 'a', name => 'field_detail');
+	if ($field_a) {
+		foreach my $h4 ($field_a->parent->look_down (_tag => 'h4')) {
+			my $li = $h4->parent;
+			my $name = ${$h4->content}[0];
+			my $pre = $li->look_down (_tag => 'pre');
+
+			my $str = $pre->as_text ();
+			$str =~ tr/\xA0 \r\n/ /d; # transform nbsp into space and remove all other white-space.
+
+			# get visibility, return value and arguments
+			$str =~ /^(public|protected|) ?(static|) ?(final|) ?(?:([^ ]*) )?/;
+
+			my ($visibility, $static, $final, $type) = ($1, $2, $3, $4);
+
+			my $is_enum_value = ($str =~ /^public static final int / && $name =~ /^[A-Z_]+$/)? 1: 0;
+
+			if ($is_enum_value) {
+				# Find which const this represents.
+				my $a = $li->look_down (_tag => 'a', href => qr/constant-values/);
+				my $fullname = $a->attr ('href');
+				$fullname =~ s/.*#//;
+				carp "Missing const $href" if !exists $self->{CONSTS}->{$fullname};
+				$is_enum_value = $self->{CONSTS}->{$fullname};
+			}
+
+			my $fullname = $class->{FULLNAME} . '.' . $name;
+
+			my $field = {
+				FULLNAME => $fullname,
+				CLASS => $class,
+				TYPE => $type,
+				VISIBILITY => $visibility,
+				STATIC => $static,
+				FINAL => $final,
+				NAME => $name,
+				IS_ENUM_VALUE => $is_enum_value,
+			};
+
+			$fields->{$fullname} = $field;
+			$self->{FIELDS}->{$fullname} = $field;
+		}
+
+		$class->{FIELDS} = $fields;
+	}
+
+	return $fields;
+}
+
 # Parse methods for the given class.
 sub _parse_methods_for_class {
 	my $self = shift;
@@ -683,15 +739,6 @@ sub _parse_methods_for_class {
 
 	my $tree = HTML::TreeBuilder->new_from_file ($fname);
 	$tree->elementify ();
-
-	# Check fields declared to be used by the class so we can account for them below.
-	my %fields = ();
-	my $field_a = $tree->look_down (_tag => 'a', name => 'field_detail');
-	if ($field_a) {
-		foreach my $h4 ($field_a->parent->look_down (_tag => 'h4')) {
-			$fields {${$h4->content}[0]} = 1;
-		}
-	}
 
 	my $ctor_a = $tree->look_down (_tag => 'a', name => 'constructor_detail');
 	if ($ctor_a) {
@@ -714,6 +761,8 @@ sub _parse_methods_for_class {
 	$class->{CTORS} = \%ctors;
 	$class->{METHODS} = \%new_methods;
 	
+	$self->_parse_fields_for_class ($class, $tree);
+
 	return $methods;
 }
 
