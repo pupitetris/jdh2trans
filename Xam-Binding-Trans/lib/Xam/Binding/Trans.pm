@@ -19,7 +19,6 @@ Version 0.01
 
 our $VERSION = '0.01';
 
-
 =head1 SYNOPSIS
 
 This module implements a class for enumeration mapping generation. An object 
@@ -126,9 +125,17 @@ A hash whose keys indicate enum values that will not be used to infer enumeratio
 
 =cut
 
-my %ENUM_IGNORE_VALUES_FOR_ENUM_NAME = (
+our %ENUM_IGNORE_VALUES_FOR_ENUM_NAME = (
 	'SUCCESS' => 1
 	);
+
+=head2 ONLY_PARSE_INT_CONSTANTS
+
+Boolean, if true, ignore any constants whose type is not int (default 1, do ignore).
+
+=cut
+
+our $ONLY_PARSE_INT_CONSTANTS = 1;
 
 =head1 SEE ALSO
 
@@ -183,7 +190,8 @@ sub name_from_fullname {
 sub class_from_fullname {
 	my $fullname = shift;
 
-	$fullname =~ s/.*\.([A-Z]+[a-z0-9][^.]+).*/$1/;
+	$fullname =~ s/[a-z0-9.]*\.((?:[A-Z]+[a-z0-9][^.]+\.?)+).*/$1/;
+	$fullname =~ s/\.$//;
 	return $fullname;
 }
 
@@ -192,6 +200,15 @@ sub pkg_from_fullname {
 
 	$fullname =~ s/\.[A-Z].*//;
 	return $fullname;
+}
+
+sub get_method_fullname {
+	my $meth = shift;
+
+	return $meth->{CLASS}->{FULLNAME} . '.' . $meth->{NAME} .
+		'(' . join (',', 
+					map { ref $_->{TYPE} eq 'ENUM'? 'enum ' . $_->{TYPE}->{FULLNAME}: $_->{TYPE} } @{$meth->{ARGS}})
+		. ')';
 }
 
 sub type_qualify {
@@ -217,6 +234,28 @@ sub type_qualify {
 
 # The good stuff.
 
+# Change the type of a given method while keeping consistency.
+sub _method_set_arg_type {
+	my $self = shift;
+	my $meth = shift;
+	my $argno = shift;
+	my $type = shift;
+
+	# you can specify a fullname.
+	if (ref $meth eq '') {
+		my $m = $self->{METHODS}->{$meth};
+		carp "Method $meth not found" if !$m;
+		$meth = $m;
+	}
+
+	$meth->{ARGS}->[$argno]->{TYPE} = $type;
+
+	my $fullname = $meth->{FULLNAME};
+	$meth->{FULLNAME} = get_method_fullname ($meth);
+	delete $self->{METHODS}->{$fullname};
+	$self->{METHODS}->{$meth->{FULLNAME}} = $meth;
+}
+
 # Merge the enum key/value pairs into the existing enums.
 sub _enums_merge {
 	my $self = shift;
@@ -233,6 +272,7 @@ sub _enums_merge {
 	foreach my $k (keys %$orig_pairs) {
 		if (exists $enum_pairs->{$k} && 
 			$orig_pairs->{$k} ne $enum_pairs->{$k}) {
+			$DB::single = 1;
 			carp "Incompatible enums $fullname";
 		}
 	}
@@ -240,6 +280,7 @@ sub _enums_merge {
 	foreach my $k (keys %$enum_pairs) {
 		if (exists $orig_pairs->{$k}) {
 			if ($orig_pairs->{$k} ne $enum_pairs->{$k}) {
+				$DB::single = 1;
 				carp "Incompatible enums $fullname";
 			}
 		} else {
@@ -250,10 +291,26 @@ sub _enums_merge {
 	return $orig;
 }
 
+sub _collect_values_by_prefix {
+	my $trans = shift;
+	my $prefix = shift;
+	my $values = shift // {};
+
+	foreach my $key (keys %{$trans->{CONSTS}}) {
+		my $const = $trans->{CONSTS}->{$key};
+		if ($key =~ /^$prefix/ && !exists $values->{$const->{NAME}}) {
+			$values->{$const->{NAME}} = $const;
+		}
+	}
+
+	return $values;
+}
+
 # Easy enums that use the same class
 sub _create_enum_straight {
 	my $self = shift;
 	my $values = shift;
+	my $argname = shift;
 
 	my $a_const = $values->{(keys %$values)[0]};
 
@@ -266,6 +323,7 @@ sub _create_enum_straight {
 		next if exists $ENUM_IGNORE_VALUES_FOR_ENUM_NAME{$value->{NAME}};
 
 		my @words = split ('_', $value->{NAME});
+		pop @words; # Remove last word: prefix can't be the whole name of a given const.
 
 		# On first iteration we just get something to compare with and skip.
 		if (ref $prev_words ne 'ARRAY') {
@@ -274,26 +332,39 @@ sub _create_enum_straight {
 		}
 
 		my $i;
-		for ($i = 0; $i < scalar @words && $i < $name_min_idx; $i++) {
+		for ($i = 0; $i < scalar @words && $i < scalar @$prev_words && $i < $name_min_idx; $i++) {
 			last if $words[$i] ne $prev_words->[$i];
 		}
 		$name_min_idx = $i if $i < $name_min_idx;
 		last if $i <= 1; # can't be smaller, so we quit at this point.
 	}
+	$name_min_idx = 0 if $name_min_idx == 999;
 
-	if ($name_min_idx < 1) {
-		# Warning: no common prefix suitable for a name.
-		carp "No max common prefix found for enum name";
-		return;
+	my $name;
+	my $offset;
+	if (scalar (keys %$values) == 1) {
+		# A ridiculous enumeration with only one value. Just take up to the penultimate word.
+		$name_min_idx = scalar @$prev_words;
 	}
+	if ($name_min_idx > 0) {
+		# We reuse prev_words, since any of the names should contain the max common prefix.
+		$name = join ('_', (@$prev_words)[0 .. $name_min_idx - 1]);
+		$offset = length ($name) + 1;
 
-	# We reuse prev_words, since any of the names should contain the max common prefix.
-	my @res = (@$prev_words)[0 .. $name_min_idx - 1];
-	if (scalar @res == 0) {
-		$DB::single = 1;
+		# Now that we have a maningful prefix, try to find qualifying consts that may not
+		# have been mentioned in the documentation.
+		$self->_collect_values_by_prefix ($a_const->{PKG} . '.' . $a_const->{CLASS} . '.' . $name, $values);
+	} else {
+		if (! defined $argname) {
+			$DB::single = 1;
+			carp "No max common prefix found for enum name";
+			return;
+		}
+		$name = uc ($argname);
+		$offset = 0;
 	}
-	my $name = join ('_', (@$prev_words)[0 .. $name_min_idx - 1]);
 	
+	# Build value-key pairs.
 	my %pairs = ();
 	foreach my $key (keys %$values) {
 		my $value = $values->{$key};
@@ -301,10 +372,15 @@ sub _create_enum_straight {
 	    if (exists $ENUM_IGNORE_VALUES_FOR_ENUM_NAME{$value->{NAME}}) {
 			$valkey = $value->{NAME};
 		} else {
-			$valkey = substr ($value->{NAME}, length ($name) + 1);
+			if ($offset > 0 && substr ($value->{NAME}, 0, $offset) eq $name . '_') {
+				$valkey = substr ($value->{NAME}, $offset);
+			} else {
+				$valkey = $value->{NAME};
+			}
 		}
 		
 		$pairs{$value->{VALUE}} = $valkey;
+		$value->{USED} = 1;
 	}
 
 	my $enum = bless {
@@ -325,11 +401,18 @@ sub _type_enum_test {
 
 	my @toks = split (/\s*[\s,*]\s*/, $dd->format);
 
+	my $argname;
+	if (scalar @toks > 2 && $toks[2] eq '-') {
+		$argname = $toks[1];
+		splice @toks, 0, 3;
+	}
+
 	my %values = ();
 	my %prefix_hist = (); # package-class concats.
 	my $found = 0;
 	foreach my $tok (@toks) {
 		# If it looks like a constant and we aren't repeating...
+		$tok =~ s/\.$//;
 		if ($tok =~ /^[a-zA-Z0-9.]*[A-Z0-9_]+$/ && ! exists $values{$tok}) {
 			foreach my $const_fullname (keys %{$self->{CONSTS}}) {
 				# Add const to results if it ends just like our token.
@@ -363,14 +446,14 @@ sub _type_enum_test {
 		if ($hist_for_class &&
 			scalar (keys %$hist_for_class) == scalar (keys %values)) {
 			# We got all of our bases covered with the consts we found in the current class.
-			return $self->_create_enum_straight ($hist_for_class);
+			return $self->_create_enum_straight ($hist_for_class, $argname);
 		}
 
 		if (scalar (keys %prefix_hist) == 1) {
 			# Only one prefix found, great!
 			if ($found == scalar (keys %values)) {
 				# No duplicate candidates, yay.
-				return $self->_create_enum_straight (\%values);
+				return $self->_create_enum_straight (\%values, $argname);
 			} else {
 				$DB::single = 1;
 				carp "Multiple candidates found";
@@ -454,24 +537,23 @@ sub _parse_proto {
 	foreach my $pair (split (',', $args)) {
 		my ($type, $name) = split (' ', $pair);
 		$type = $self->_type_qualify ($type, $class, \@anchors, $ul, $argno);
-		push @args, { 'TYPE' => $type, 'NAME' => $name };
+		push @args, { TYPE => $type, NAME => $name };
 		$argno++;
 	}
 
-	my $fullname = 
-		$class->{FULLNAME} . '.' . $name .
-		'(' . join (',', map { $_->{TYPE} } @args) . ')';
+	my $meth = {
+		CLASS => $class,
+		TYPE => $type,
+		VISIBILITY => $visibility,
+		STATIC => $static,
+		RETURN => $ret,
+		NAME => $name,
+		ARGS => \@args
+	};
 
-	return {
-		'CLASS' => $class,
-		'TYPE' => $type,
-		'FULLNAME' => $fullname,
-		'VISIBILITY' => $visibility,
-		'STATIC' => $static,
-		'RETURN' => $ret,
-		'NAME' => $name,
-		'ARGS' => \@args
-		};
+	$meth->{FULLNAME} = get_method_fullname ($meth);
+
+	return $meth;
 }
 
 sub _parse_packages {
@@ -480,7 +562,7 @@ sub _parse_packages {
 	open my $fd, "$self->{BASEDIR}/package-list" || croak "Package list file `$self->{BASEDIR}/package-list` not found.";
 	while (<$fd>) {
 		s/$EOL//;
-		$packages{$_} = { 'NAME' => $_ };
+		$packages{$_} = { NAME => $_ };
 	}
 	close $fd;
 	return \%packages;
@@ -518,15 +600,19 @@ sub _parse_constants {
 				$value =~ s/(^"|"$)//g;
 			}
 
+			# To find enums, we only care about int constants.
+			next if $ONLY_PARSE_INT_CONSTANTS && $type ne 'int';
+
 			my $a = $tr->look_down (_tag => 'a');
 			my $fullname = $a->attr ('name');
 			$consts{$fullname} = {
-				'FULLNAME' => $fullname,
-				'NAME' => &name_from_fullname ($fullname),
-				'CLASS' => &class_from_fullname ($fullname),
-				'PKG' => &pkg_from_fullname ($fullname),
-				'TYPE' => $type,
-				'VALUE' => $value
+				FULLNAME => $fullname,
+				NAME => &name_from_fullname ($fullname),
+				CLASS => &class_from_fullname ($fullname),
+				PKG => &pkg_from_fullname ($fullname),
+				TYPE => $type,
+				USED => 0,
+				VALUE => $value
 			};
 		}
 	}
@@ -558,10 +644,10 @@ sub _parse_classes_from_pkg {
 		
 		my $fullname = $pkg . '.' . $name;
 		$classes->{$fullname} = {
-			'FULLNAME' => $fullname,
-			'PKG' => $pkg,
-			'NAME' => $name,
-			'TYPE' => $type
+			FULLNAME => $fullname,
+			PKG => $pkg,
+			NAME => $name,
+			TYPE => $type
 		};
 	}
 
