@@ -272,6 +272,11 @@ sub find_max_common_prefix {
 	return join ('_', (@$prev_words)[0 .. $name_min_idx - 1]);
 }
 
+sub type_may_be_enum {
+	my $type = shift;
+	return $type eq 'int' || $type =~ /<[^>]*java.lang.Integer[^>]*>/;
+}
+
 sub type_replace_integer_with_enum {
 	my $type = shift;
 	my $enum = shift;
@@ -505,7 +510,7 @@ sub _type_qualify {
 	my $method_name = shift;
 
 	$type = &type_qualify ($type, $class, $anchors);
-	return $type if $type ne 'int' && $type !~ /<[^>]*java.lang.Integer[^>]*>/;
+	return $type if ! type_may_be_enum ($type);
 
 	# OK, the type uses an integer, try to see if such integer is an enum.
 	# If something fails, assume the type is an ordinary type.
@@ -648,6 +653,26 @@ sub _parse_constants {
 	return \%consts;
 }
 
+sub _create_int_const {
+	my $self = shift;
+	my $class = shift;
+	my $name = shift;
+	my $value = shift;
+
+	my $fullname = $class->{FULLNAME} . '.' . $name;
+	
+	return $self->{CONSTS}->{$fullname} = {
+		FULLNAME => $fullname,
+		NAME => $name,
+		CLASS => $class->{FULLNAME},
+		PKG => $class->{PKG},
+		TYPE => 'int',
+		USED => 0,
+		VALUE_IS_COOKED = 1, # This will tell us later that the value was created by us.
+		VALUE => $value
+	};
+}
+
 # Parse classes (and interfaces) for the given package.
 sub _parse_classes_from_pkg {
 	my $self = shift;
@@ -705,31 +730,41 @@ sub _parse_fields_for_class {
 	# Check fields declared to be used by the class so we can account for them below.
 	my $field_a = $tree->look_down (_tag => 'a', name => 'field_detail');
 	if ($field_a) {
+		my $new_const_num = 0;
 		foreach my $h4 ($field_a->parent->look_down (_tag => 'h4')) {
 			my $li = $h4->parent;
 			my $name = ${$h4->content}[0];
 			my $pre = $li->look_down (_tag => 'pre');
 
 			my $str = $pre->as_text ();
-			$str =~ tr/\xA0 \r\n/ /d; # transform nbsp into space and remove all other white-space.
+			$str =~ s/[\xA0 \r\n]+/ /g; # collapse white space.
 
 			# get visibility, return value and arguments
 			$str =~ /^(public|protected|) ?(static|) ?(final|) ?(?:([^ ]*) )?/;
 
 			my ($visibility, $static, $final, $type) = ($1, $2, $3, $4);
 
-			my $is_enum_value = ($str =~ /^public static final int / && $name =~ /^[A-Z_]+$/)? 1: 0;
+			my $is_enum_value = ($static && $type eq 'int' && $name =~ /^[A-Z0-9_]+$/)? 1: '';
+
+			my $fullname = $class->{FULLNAME} . '.' . $name;
 
 			if ($is_enum_value) {
 				# Find which const this represents.
 				my $a = $li->look_down (_tag => 'a', href => qr/constant-values/);
-				my $fullname = $a->attr ('href');
-				$fullname =~ s/.*#//;
-				carp "Missing const $fullname" if !exists $self->{CONSTS}->{$fullname};
-				$is_enum_value = $self->{CONSTS}->{$fullname};
+				my $const_fullname;
+				if ($a) {
+					$const_fullname = $a->attr ('href');
+					$const_fullname =~ s/.*#//;
+				} else {
+					$const_fullname = $fullname;
+				}
+				if (!exists $self->{CONSTS}->{$const_fullname}) {
+					$is_enum_value = $self->{CONSTS}->{$const_fullname};
+				} else {
+					$is_enum_value = $self->_create_int_const ($class, $name, $new_const_num);
+					$new_const_num ++;
+				}
 			}
-
-			my $fullname = $class->{FULLNAME} . '.' . $name;
 
 			my $field = {
 				FULLNAME => $fullname,
@@ -747,6 +782,24 @@ sub _parse_fields_for_class {
 		}
 
 		$class->{FIELDS} = $fields;
+
+		# Now try to infer which fields use enum.
+		foreach my $field (values %$fields) {
+			next if $field->{IS_ENUM_VALUE};
+			next if !type_may_be_enum ($field->{TYPE});
+			my $str = uc ($field->{NAME}) . '_';
+			my %consts = ();
+			foreach my $ff (values %$fields) {
+				my $const = $ff->{IS_ENUM_VALUE};
+				next if !$const;
+				next if index ($const->{NAME}, $str) < 0;
+				$consts{$const->{NAME}} = $const;
+			}
+			next if scalar keys %consts == 0;
+			my $prefix = find_max_common_prefix (\%consts);
+			next if $prefix eq '';
+			$field->{TYPE} = type_replace_integer_with_enum ($field->{TYPE}, $self->_create_enum_straight (\%consts));
+		}
 	}
 
 	return $fields;
@@ -757,6 +810,10 @@ sub _parse_methods_for_class {
 	my $self = shift;
 	my $class = shift;
 	my $methods = shift // {};
+
+	# Do this here because new consts may be created and used here for enums.
+	# Some consts are not declared in the global constants index page.
+	$self->_parse_fields_for_class ($class, $tree);
 
 	my %new_methods = ();
 	my %ctors = ();
@@ -790,8 +847,6 @@ sub _parse_methods_for_class {
 	$class->{CTORS} = \%ctors;
 	$class->{METHODS} = \%new_methods;
 	
-	$self->_parse_fields_for_class ($class, $tree);
-
 	return $methods;
 }
 
