@@ -231,6 +231,59 @@ sub type_qualify {
 	return $type;
 }
 
+# Find in the consts collection, the longest prefix in their names, common to all.
+sub find_max_common_prefix {
+	my $consts = shift; # A hash of consts
+
+	# Find the number of words that compose the max common prefix
+	# among the received values.
+	my $name_min_idx = 999;
+	my $prev_words;
+	foreach my $const (values %$consts) {
+		next if exists $ENUM_IGNORE_VALUES_FOR_ENUM_NAME{$const->{NAME}};
+
+		my @words = split ('_', $const->{NAME});
+		pop @words; # Remove last word: prefix can't be the whole name of a given const.
+
+		# On first iteration we just get something to compare with and skip.
+		if (ref $prev_words ne 'ARRAY') {
+			$prev_words = \@words;
+			next;
+		}
+
+		my $i;
+		for ($i = 0; $i < scalar @words && $i < scalar @$prev_words && $i < $name_min_idx; $i++) {
+			last if $words[$i] ne $prev_words->[$i];
+		}
+		$name_min_idx = $i if $i < $name_min_idx;
+		last if $i <= 1; # can't be smaller, so we quit at this point.
+	}
+	$name_min_idx = 0 if $name_min_idx == 999;
+
+	if (scalar (keys %$consts) == 1) {
+		# A ridiculous enumeration with only one value. Just take up to the penultimate word.
+		$name_min_idx = scalar @$prev_words;
+	}
+	
+	# These consts are not similar at all.
+	return '' if $name_min_idx < 1;
+
+	# We reuse prev_words, since any of the names should contain the max common prefix.
+	return join ('_', (@$prev_words)[0 .. $name_min_idx - 1]);
+}
+
+sub type_replace_integer_with_enum {
+	my $type = shift;
+	my $enum = shift;
+
+	return $enum if $type eq 'int';
+
+	my $str = 'enum:' . $enum->{FULLNAME};
+
+	$type =~ s/(?:int|java.lang.Integer)/$str/;
+	return $type;
+}
+
 # Private methods
 
 # The good stuff.
@@ -293,12 +346,12 @@ sub _enums_merge {
 }
 
 sub _collect_values_by_prefix {
-	my $trans = shift;
+	my $self = shift;
 	my $prefix = shift;
 	my $values = shift // {};
 
-	foreach my $key (keys %{$trans->{CONSTS}}) {
-		my $const = $trans->{CONSTS}->{$key};
+	foreach my $key (keys %{$self->{CONSTS}}) {
+		my $const = $self->{CONSTS}->{$key};
 		if ($key =~ /^$prefix/ && !exists $values->{$const->{NAME}}) {
 			$values->{$const->{NAME}} = $const;
 		}
@@ -310,51 +363,20 @@ sub _collect_values_by_prefix {
 # Easy enums that use the same class
 sub _create_enum_straight {
 	my $self = shift;
-	my $values = shift;
+	my $consts = shift;
 	my $argname = shift;
 
-	my $a_const = $values->{(keys %$values)[0]};
+	my $a_const = (values %$consts)[0];
 
-	# Find the number of words that compose the max common prefix
-	# among the received values.
-	my $name_min_idx = 999;
-	my $prev_words;
-	foreach my $key (keys %$values) {
-		my $value = $values->{$key};
-		next if exists $ENUM_IGNORE_VALUES_FOR_ENUM_NAME{$value->{NAME}};
-
-		my @words = split ('_', $value->{NAME});
-		pop @words; # Remove last word: prefix can't be the whole name of a given const.
-
-		# On first iteration we just get something to compare with and skip.
-		if (ref $prev_words ne 'ARRAY') {
-			$prev_words = \@words;
-			next;
-		}
-
-		my $i;
-		for ($i = 0; $i < scalar @words && $i < scalar @$prev_words && $i < $name_min_idx; $i++) {
-			last if $words[$i] ne $prev_words->[$i];
-		}
-		$name_min_idx = $i if $i < $name_min_idx;
-		last if $i <= 1; # can't be smaller, so we quit at this point.
-	}
-	$name_min_idx = 0 if $name_min_idx == 999;
-
-	my $name;
 	my $offset;
-	if (scalar (keys %$values) == 1) {
-		# A ridiculous enumeration with only one value. Just take up to the penultimate word.
-		$name_min_idx = scalar @$prev_words;
-	}
-	if ($name_min_idx > 0) {
-		# We reuse prev_words, since any of the names should contain the max common prefix.
-		$name = join ('_', (@$prev_words)[0 .. $name_min_idx - 1]);
+	my $name = find_max_common_prefix ($consts);
+
+	if ($name ne '') {
 		$offset = length ($name) + 1;
 
 		# Now that we have a maningful prefix, try to find qualifying consts that may not
 		# have been mentioned in the documentation.
-		$self->_collect_values_by_prefix ($a_const->{PKG} . '.' . $a_const->{CLASS} . '.' . $name, $values);
+		$self->_collect_values_by_prefix ($a_const->{PKG} . '.' . $a_const->{CLASS} . '.' . $name, $consts);
 	} else {
 		if (! defined $argname) {
 			$DB::single = 1;
@@ -367,21 +389,20 @@ sub _create_enum_straight {
 	
 	# Build value-key pairs.
 	my %pairs = ();
-	foreach my $key (keys %$values) {
-		my $value = $values->{$key};
+	foreach my $const (values %$consts) {
 		my $valkey;
-	    if (exists $ENUM_IGNORE_VALUES_FOR_ENUM_NAME{$value->{NAME}}) {
-			$valkey = $value->{NAME};
+	    if (exists $ENUM_IGNORE_VALUES_FOR_ENUM_NAME{$const->{NAME}}) {
+			$valkey = $const->{NAME};
 		} else {
-			if ($offset > 0 && substr ($value->{NAME}, 0, $offset) eq $name . '_') {
-				$valkey = substr ($value->{NAME}, $offset);
+			if ($offset > 0 && substr ($const->{NAME}, 0, $offset) eq $name . '_') {
+				$valkey = substr ($const->{NAME}, $offset);
 			} else {
-				$valkey = $value->{NAME};
+				$valkey = $const->{NAME};
 			}
 		}
 		
-		$pairs{$value->{VALUE}} = $valkey;
-		$value->{USED} = 1;
+		$pairs{$const->{VALUE}} = $valkey;
+		$const->{USED} = 1;
 	}
 
 	my $enum = bless {
@@ -397,13 +418,20 @@ sub _create_enum_straight {
 
 sub _type_enum_test {
 	my $self = shift;
+	my $type = shift;
 	my $dd = shift;
 	my $class = shift;
+	my $method_name = shift;
 
 	my @toks = split (/\s*[\s,*]\s*/, $dd->format);
 
 	my $argname;
-	if (scalar @toks > 2 && $toks[2] eq '-') {
+	if ($method_name) {
+		if ($method_name =~ /^get/) {
+			$method_name =~ s/([a-z])([A-Z])/$1_$2/g;
+			$argname = uc (substr ($method_name, 4));
+		}
+	} elsif (scalar @toks > 2 && $toks[2] eq '-') {
 		$argname = $toks[1];
 		splice @toks, 0, 3;
 	}
@@ -447,14 +475,14 @@ sub _type_enum_test {
 		if ($hist_for_class &&
 			scalar (keys %$hist_for_class) == scalar (keys %values)) {
 			# We got all of our bases covered with the consts we found in the current class.
-			return $self->_create_enum_straight ($hist_for_class, $argname);
+			return type_replace_integer_with_enum ($type, $self->_create_enum_straight ($hist_for_class, $argname));
 		}
 
 		if (scalar (keys %prefix_hist) == 1) {
 			# Only one prefix found, great!
 			if ($found == scalar (keys %values)) {
 				# No duplicate candidates, yay.
-				return $self->_create_enum_straight (\%values, $argname);
+				return type_replace_integer_with_enum ($type, $self->_create_enum_straight (\%values, $argname));
 			} else {
 				$DB::single = 1;
 				carp "Multiple candidates found";
@@ -464,7 +492,7 @@ sub _type_enum_test {
 		carp "More than one prefix";
 	}
 
-	return 'int';
+	return $type;
 }
 
 sub _type_qualify {
@@ -474,16 +502,17 @@ sub _type_qualify {
 	my $anchors = shift;
 	my $ul = shift;
 	my $argno = shift;
+	my $method_name = shift;
 
 	$type = &type_qualify ($type, $class, $anchors);
-	return $type if $type ne 'int';
+	return $type if $type ne 'int' && $type !~ /<[^>]*java.lang.Integer[^>]*>/;
 
-	# OK, the type is an int, try to see if it is an enum.
-	# If something fails, assume the type is an ordinary int.
+	# OK, the type uses an integer, try to see if such integer is an enum.
+	# If something fails, assume the type is an ordinary type.
 	
 	# Get the element with the definitions.
 	my $dl = $ul->look_down (_tag => 'dl');
-	return 'int' if !defined $dl;
+	return $type if !defined $dl;
 
 	my $subtitle = ($argno < 0)?
 		'Returns:': 
@@ -503,13 +532,13 @@ sub _type_qualify {
 		next if !$found_dt;
 		if ($argno < 0 || $thisarg == $argno) {
 			# OK, this dd has got the stuff we are looking for.
-			return $self->_type_enum_test ($d, $class);
+			return $self->_type_enum_test ($type, $d, $class, $method_name);
 		}
 		$thisarg ++;
 	}
 	
-	# We couldn't find the definition. Assume it's an ordinary int then.
-	return 'int';
+	# We couldn't find the definition. Assume it's an ordinary type then.
+	return $type;
 }
 
 sub _parse_proto {
@@ -530,7 +559,7 @@ sub _parse_proto {
 	my $type = ($name eq $class->{NAME})? 'ctor': 'method';
 
 	my @anchors = $pre->look_down (_tag => 'a');
-	$ret = $self->_type_qualify ($ret, $class, \@anchors, $ul, -1) if defined $ret;
+	$ret = $self->_type_qualify ($ret, $class, \@anchors, $ul, -1, $name) if defined $ret;
 
 	my @args = ();
 	my $argno = 0;
@@ -696,7 +725,7 @@ sub _parse_fields_for_class {
 				my $a = $li->look_down (_tag => 'a', href => qr/constant-values/);
 				my $fullname = $a->attr ('href');
 				$fullname =~ s/.*#//;
-				carp "Missing const $href" if !exists $self->{CONSTS}->{$fullname};
+				carp "Missing const $fullname" if !exists $self->{CONSTS}->{$fullname};
 				$is_enum_value = $self->{CONSTS}->{$fullname};
 			}
 
