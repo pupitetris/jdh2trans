@@ -212,6 +212,12 @@ sub get_method_fullname {
 		. ')';
 }
 
+sub name_camel_to_const {
+	my $name = shift;
+	$name =~ s/([a-z])([A-Z])/$1_$2/g;
+	return uc ($name);
+}
+
 sub type_qualify {
 	my $type = shift;
 	my $class = shift;
@@ -433,8 +439,7 @@ sub _type_enum_test {
 	my $argname;
 	if ($method_name) {
 		if ($method_name =~ /^get/) {
-			$method_name =~ s/([a-z])([A-Z])/$1_$2/g;
-			$argname = uc (substr ($method_name, 4));
+			$argname = substr (name_camel_to_const ($method_name), 4);
 		}
 	} elsif (scalar @toks > 2 && $toks[2] eq '-') {
 		$argname = $toks[1];
@@ -604,7 +609,10 @@ sub _parse_packages {
 	open my $fd, "$self->{BASEDIR}/package-list" || croak "Package list file `$self->{BASEDIR}/package-list` not found.";
 	while (<$fd>) {
 		s/$EOL//;
-		$packages{$_} = { NAME => $_ };
+		$packages{$_} = { 
+			NAME => $_,
+			CONSTS => {}
+		};
 	}
 	close $fd;
 	return \%packages;
@@ -647,15 +655,18 @@ sub _parse_constants {
 
 			my $a = $tr->look_down (_tag => 'a');
 			my $fullname = $a->attr ('name');
-			$consts{$fullname} = {
+			my $pkg = pkg_from_fullname ($fullname);
+			my $const = {
 				FULLNAME => $fullname,
-				NAME => &name_from_fullname ($fullname),
-				CLASS => &class_from_fullname ($fullname),
-				PKG => &pkg_from_fullname ($fullname),
+				NAME => name_from_fullname ($fullname),
+				CLASS => class_from_fullname ($fullname),
+				PKG => $pkg,
 				TYPE => $type,
 				USED => 0,
 				VALUE => $value
 			};
+			$consts{$fullname} = $const;
+			$self->{PACKAGES}->{$pkg}->{CONSTS}->{$fullname} = $const;
 		}
 	}
 	return \%consts;
@@ -669,7 +680,7 @@ sub _create_int_const {
 
 	my $fullname = $class->{FULLNAME} . '.' . $name;
 	
-	return $self->{CONSTS}->{$fullname} = {
+	my $const = {
 		FULLNAME => $fullname,
 		NAME => $name,
 		CLASS => $class->{NAME},
@@ -679,6 +690,11 @@ sub _create_int_const {
 		VALUE => $value,
 		VALUE_IS_COOKED => 1 # The value was created by us.
 	};
+
+	$self->{CONSTS}->{$fullname} = $const;
+	$self->{PACKAGES}->{$class->{PKG}}->{CONSTS}->{$fullname} = $const;
+
+	return $const;
 }
 
 # Parse classes (and interfaces) for the given package.
@@ -791,22 +807,66 @@ sub _parse_fields_for_class {
 
 		$class->{FIELDS} = $fields;
 
-		# Now try to infer which fields use enum.
+		# Now try (really hard) to infer which fields use enum.
 		foreach my $field (values %$fields) {
 			next if $field->{IS_ENUM_VALUE};
 			next if !type_may_be_enum ($field->{TYPE});
-			my $str = uc ($field->{NAME}) . '_';
+
+			# Take all but the last word, in const format.
+			my $str = name_camel_to_const ($field->{NAME});
+			$str =~ s/_[^_]+$/_/;
+
 			my %consts = ();
+
 			foreach my $ff (values %$fields) {
 				my $const = $ff->{IS_ENUM_VALUE};
 				next if !$const;
 				next if index ($const->{NAME}, $str) < 0;
 				$consts{$const->{NAME}} = $const;
 			}
-			next if scalar keys %consts == 0;
+
+			my $pkg = $field->{CLASS}->{PKG};
+			if (scalar keys %consts == 0 || find_max_common_prefix (\%consts) eq '') {
+				# Consts not found in this class fields, try in this package.
+				%consts = ();
+				foreach my $const (values %{$self->{PACKAGES}->{$pkg}->{CONSTS}}) {
+					if (index ($const->{NAME}, $str) > -1) {
+						$consts{$const->{NAME}} = $const;
+					}
+				}
+			}
+
+			# If consts not found in this package either, try in sub-packages.
+			if (scalar keys %consts == 0 || find_max_common_prefix (\%consts) eq '') {
+				foreach my $pname (keys %{$self->{PACKAGES}}) {
+					if ($pname ne $pkg && index ($pname, $pkg) > -1) {
+						# It's a sub-package.
+						my $pp = $self->{PACKAGES}->{$pname};
+						%consts = ();
+						foreach my $cname (keys %{$pp->{CONSTS}}) {
+							if (index ($cname, $str) > -1) {
+								$consts{$cname} = $pp->{CONSTS}->{$cname};
+							}
+						}
+						# Get out if we made it.
+						last if scalar keys %consts > 0 && find_max_common_prefix (\%consts) ne '';
+					}
+				}
+			}
+
+			# If all failed, give up.
+			if (scalar keys %consts == 0) {
+				next;
+			}
+
 			my $prefix = find_max_common_prefix (\%consts);
-			next if $prefix eq '';
-			$field->{TYPE} = type_replace_integer_with_enum ($field->{TYPE}, $self->_create_enum_straight (\%consts));
+			if ($prefix eq '') {
+				next;
+			}
+
+			# OK, we got something meaningful (hopefully), go process the enum.
+			$field->{TYPE} = type_replace_integer_with_enum ($field->{TYPE}, 
+															 $self->_create_enum_straight (\%consts));
 		}
 	}
 
