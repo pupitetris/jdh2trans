@@ -126,9 +126,7 @@ A hash whose keys indicate enum values that will not be used to infer enumeratio
 
 =cut
 
-our %ENUM_IGNORE_VALUES_FOR_ENUM_NAME = (
-	'SUCCESS' => 1
-	);
+our %ENUM_IGNORE_VALUES_FOR_ENUM_NAME = ();
 
 =head2 ONLY_PARSE_INT_CONSTANTS
 
@@ -137,6 +135,14 @@ Boolean, if true, ignore any constants whose type is not int (default 1, do igno
 =cut
 
 our $ONLY_PARSE_INT_CONSTANTS = 1;
+
+=head2 PREFIX_CLEANUP_RE
+
+Regular expression (use qr/myregexp/) to clean up names for arguments that are candidates for enums.
+
+=cut
+
+our $PREFIX_CLEANUP_RE;
 
 =head1 SEE ALSO
 
@@ -214,6 +220,9 @@ sub get_method_fullname {
 
 sub name_camel_to_const {
 	my $name = shift;
+	if ($PREFIX_CLEANUP_RE) {
+		$name =~ s/$PREFIX_CLEANUP_RE//g;
+	}
 	$name =~ s/([a-z])([A-Z])/$1_$2/g;
 	return uc ($name);
 }
@@ -394,7 +403,7 @@ sub _create_enum_straight {
 			carp "No max common prefix found for enum name";
 			return;
 		}
-		$name = uc ($argname);
+		$name = name_camel_to_const ($argname);
 		$offset = 0;
 	}
 	
@@ -439,7 +448,7 @@ sub _type_enum_test {
 	my $argname;
 	if ($method_name) {
 		if ($method_name =~ /^get/) {
-			$argname = substr (name_camel_to_const ($method_name), 4);
+			$argname = substr ($method_name, 3);
 		}
 	} elsif (scalar @toks > 2 && $toks[2] eq '-') {
 		$argname = $toks[1];

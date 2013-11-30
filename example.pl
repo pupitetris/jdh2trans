@@ -16,6 +16,22 @@ my $BASEDIR = $ARGV[0]; # Base directory for the HTML documentation.
 
 die 'BASEDIR not specified' if $BASEDIR eq '';
 
+
+# Configuration:
+
+# When using arg names as prefix to find enums, remove the "Info" word.
+$Xam::Binding::Trans::PREFIX_CLEANUP_RE = qr/Info$/;
+
+# Consts named "SUCCESS" are ignored when looking for max common prefix.
+%Xam::Binding::Trans::ENUM_IGNORE_VALUES_FOR_ENUM_NAME = (
+	'SUCCESS' => 1
+	);
+
+# This is the default: non-int constants are ommited from CONSTS structure to simplify reports.
+$Xam::Binding::Trans::ONLY_PARSE_INT_CONSTANTS = 1;
+
+
+# Create parser instance:
 my $trans = Xam::Binding::Trans->new ();
 $trans->parse ($BASEDIR);
 
