@@ -83,7 +83,7 @@ sub parse {
 	$self->{CONSTS} = $self->_parse_constants ();
 
 	if (scalar @packages > 0) {
-		my %pkgs = map { $_ => $self->{PACKAGES}->{$_} } @packages;
+		my %pkgs = map { $_ => $self->{PACKAGES}{$_} } @packages;
 		$self->{CLASSES} = $self->_parse_classes (\%pkgs);
 	} else {
 		$self->{CLASSES} = $self->_parse_classes ($self->{PACKAGES});
@@ -206,9 +206,9 @@ sub pkg_from_fullname {
 sub get_method_fullname {
 	my $meth = shift;
 
-	return $meth->{CLASS}->{FULLNAME} . '.' . $meth->{NAME} .
+	return $meth->{CLASS}{FULLNAME} . '.' . $meth->{NAME} .
 		'(' . join (',', 
-					map { ref $_->{TYPE} eq 'ENUM'? 'enum ' . $_->{TYPE}->{FULLNAME}: $_->{TYPE} } @{$meth->{ARGS}})
+					map { ref $_->{TYPE} eq 'ENUM'? 'enum ' . $_->{TYPE}{FULLNAME}: $_->{TYPE} } @{$meth->{ARGS}})
 		. ')';
 }
 
@@ -308,7 +308,7 @@ sub _method_set_arg_type {
 
 	# you can specify a fullname.
 	if (ref $meth eq '') {
-		my $m = $self->{METHODS}->{$meth};
+		my $m = $self->{METHODS}{$meth};
 		carp "Method $meth not found" if !$m;
 		$meth = $m;
 	}
@@ -317,8 +317,8 @@ sub _method_set_arg_type {
 
 	my $fullname = $meth->{FULLNAME};
 	$meth->{FULLNAME} = get_method_fullname ($meth);
-	delete $self->{METHODS}->{$fullname};
-	$self->{METHODS}->{$meth->{FULLNAME}} = $meth;
+	delete $self->{METHODS}{$fullname};
+	$self->{METHODS}{$meth->{FULLNAME}} = $meth;
 }
 
 # Merge the enum key/value pairs into the existing enums.
@@ -328,8 +328,8 @@ sub _enums_merge {
 
 	my $fullname = $enum->{FULLNAME};
 
-	my $orig = $self->{ENUMS}->{$fullname};
-	return $self->{ENUMS}->{$fullname} = $enum if !$orig;
+	my $orig = $self->{ENUMS}{$fullname};
+	return $self->{ENUMS}{$fullname} = $enum if !$orig;
 
 	my $orig_pairs = $orig->{PAIRS};
 	my $enum_pairs = $enum->{PAIRS};
@@ -362,7 +362,7 @@ sub _collect_values_by_prefix {
 	my $values = shift // {};
 
 	foreach my $key (keys %{$self->{CONSTS}}) {
-		my $const = $self->{CONSTS}->{$key};
+		my $const = $self->{CONSTS}{$key};
 		if ($key =~ /^$prefix/ && !exists $values->{$const->{NAME}}) {
 			$values->{$const->{NAME}} = $const;
 		}
@@ -456,12 +456,12 @@ sub _type_enum_test {
 			foreach my $const_fullname (keys %{$self->{CONSTS}}) {
 				# Add const to results if it ends just like our token.
 				if ($const_fullname =~ /[_.]$tok$/) {
-					my $const = $self->{CONSTS}->{$const_fullname};
+					my $const = $self->{CONSTS}{$const_fullname};
 					next if $const->{TYPE} ne 'int';
 
 					my $classname = $const->{PKG} . '.' . $const->{CLASS};
 					$prefix_hist{$classname} = {} if !exists $prefix_hist{$classname};
-					$prefix_hist{$classname}->{$tok} = $const;
+					$prefix_hist{$classname}{$tok} = $const;
 
 					if (exists $values{$tok}) {
 						if (ref $values{$tok} ne 'ARRAY') {
@@ -666,7 +666,7 @@ sub _parse_constants {
 				VALUE => $value
 			};
 			$consts{$fullname} = $const;
-			$self->{PACKAGES}->{$pkg}->{CONSTS}->{$fullname} = $const;
+			$self->{PACKAGES}{$pkg}{CONSTS}{$fullname} = $const;
 		}
 	}
 	return \%consts;
@@ -691,8 +691,8 @@ sub _create_int_const {
 		VALUE_IS_COOKED => 1 # The value was created by us.
 	};
 
-	$self->{CONSTS}->{$fullname} = $const;
-	$self->{PACKAGES}->{$class->{PKG}}->{CONSTS}->{$fullname} = $const;
+	$self->{CONSTS}{$fullname} = $const;
+	$self->{PACKAGES}{$class->{PKG}}{CONSTS}{$fullname} = $const;
 
 	return $const;
 }
@@ -782,8 +782,8 @@ sub _parse_fields_for_class {
 				} else {
 					$const_fullname = $fullname;
 				}
-				if (exists $self->{CONSTS}->{$const_fullname}) {
-					$is_enum_value = $self->{CONSTS}->{$const_fullname};
+				if (exists $self->{CONSTS}{$const_fullname}) {
+					$is_enum_value = $self->{CONSTS}{$const_fullname};
 				} else {
 					$is_enum_value = $self->_create_int_const ($class, $name, $new_const_num);
 					$new_const_num ++;
@@ -802,7 +802,7 @@ sub _parse_fields_for_class {
 			};
 
 			$fields->{$fullname} = $field;
-			$self->{FIELDS}->{$fullname} = $field;
+			$self->{FIELDS}{$fullname} = $field;
 		}
 
 		$class->{FIELDS} = $fields;
@@ -825,11 +825,11 @@ sub _parse_fields_for_class {
 				$consts{$const->{NAME}} = $const;
 			}
 
-			my $pkg = $field->{CLASS}->{PKG};
+			my $pkg = $field->{CLASS}{PKG};
 			if (scalar keys %consts == 0 || find_max_common_prefix (\%consts) eq '') {
 				# Consts not found in this class fields, try in this package.
 				%consts = ();
-				foreach my $const (values %{$self->{PACKAGES}->{$pkg}->{CONSTS}}) {
+				foreach my $const (values %{$self->{PACKAGES}{$pkg}{CONSTS}}) {
 					if (index ($const->{NAME}, $str) > -1) {
 						$consts{$const->{NAME}} = $const;
 					}
@@ -841,11 +841,11 @@ sub _parse_fields_for_class {
 				foreach my $pname (keys %{$self->{PACKAGES}}) {
 					if ($pname ne $pkg && index ($pname, $pkg) > -1) {
 						# It's a sub-package.
-						my $pp = $self->{PACKAGES}->{$pname};
+						my $pp = $self->{PACKAGES}{$pname};
 						%consts = ();
 						foreach my $cname (keys %{$pp->{CONSTS}}) {
 							if (index ($cname, $str) > -1) {
-								$consts{$cname} = $pp->{CONSTS}->{$cname};
+								$consts{$cname} = $pp->{CONSTS}{$cname};
 							}
 						}
 						# Get out if we made it.
