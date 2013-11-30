@@ -493,6 +493,14 @@ sub _type_enum_test {
 				carp "Multiple candidates found";
 			}
 		}
+
+		foreach my $prefix (values %prefix_hist) {
+			if (scalar (keys %$prefix) == scalar (keys %values)) {
+				# All bases covered with the consts found in this prefix.
+				return type_replace_integer_with_enum ($type, $self->_create_enum_straight ($prefix, $argname));
+			}
+		}
+
 		$DB::single = 1;
 		carp "More than one prefix";
 	}
@@ -664,12 +672,12 @@ sub _create_int_const {
 	return $self->{CONSTS}->{$fullname} = {
 		FULLNAME => $fullname,
 		NAME => $name,
-		CLASS => $class->{FULLNAME},
+		CLASS => $class->{NAME},
 		PKG => $class->{PKG},
 		TYPE => 'int',
 		USED => 0,
-		VALUE_IS_COOKED => 1, # This will tell us later that the value was created by us.
-		VALUE => $value
+		VALUE => $value,
+		VALUE_IS_COOKED => 1 # The value was created by us.
 	};
 }
 
@@ -758,7 +766,7 @@ sub _parse_fields_for_class {
 				} else {
 					$const_fullname = $fullname;
 				}
-				if (!exists $self->{CONSTS}->{$const_fullname}) {
+				if (exists $self->{CONSTS}->{$const_fullname}) {
 					$is_enum_value = $self->{CONSTS}->{$const_fullname};
 				} else {
 					$is_enum_value = $self->_create_int_const ($class, $name, $new_const_num);
