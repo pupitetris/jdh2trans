@@ -510,6 +510,14 @@ sub _type_enum_test {
 		carp "More than one prefix";
 	}
 
+	# Uff, try to use the argname as prefix to find relevant constants within the class.
+	if (defined $argname) {
+		my $prefix = $self->_collect_values_by_prefix ($class->{FULLNAME} . '.' . uc ($argname));
+		if (scalar (keys %$prefix) > 0) {
+			return type_replace_integer_with_enum ($type, $self->_create_enum_straight ($prefix));
+		}
+	}
+
 	return $type;
 }
 
