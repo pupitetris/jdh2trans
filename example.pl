@@ -80,4 +80,7 @@ print Dumper ($trans->{CONSTS});
 #$Data::Dumper::Varname = 'ENUMS';
 #print Dumper ($trans->{ENUMS});
 
+#$Data::Dumper::Varname = 'METHODS';
+#print Dumper ($trans->{METHODS});
+
 1;
