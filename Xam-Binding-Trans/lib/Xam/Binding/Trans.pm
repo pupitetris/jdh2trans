@@ -668,7 +668,7 @@ sub _create_int_const {
 		PKG => $class->{PKG},
 		TYPE => 'int',
 		USED => 0,
-		VALUE_IS_COOKED = 1, # This will tell us later that the value was created by us.
+		VALUE_IS_COOKED => 1, # This will tell us later that the value was created by us.
 		VALUE => $value
 	};
 }
@@ -811,10 +811,6 @@ sub _parse_methods_for_class {
 	my $class = shift;
 	my $methods = shift // {};
 
-	# Do this here because new consts may be created and used here for enums.
-	# Some consts are not declared in the global constants index page.
-	$self->_parse_fields_for_class ($class, $tree);
-
 	my %new_methods = ();
 	my %ctors = ();
 
@@ -825,6 +821,10 @@ sub _parse_methods_for_class {
 
 	my $tree = HTML::TreeBuilder->new_from_file ($fname);
 	$tree->elementify ();
+
+	# Do this here because new consts may be created and used here for enums.
+	# Some consts are not declared in the global constants index page.
+	$self->_parse_fields_for_class ($class, $tree);
 
 	my $ctor_a = $tree->look_down (_tag => 'a', name => 'constructor_detail');
 	if ($ctor_a) {
