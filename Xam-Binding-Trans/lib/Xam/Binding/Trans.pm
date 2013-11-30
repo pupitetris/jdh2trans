@@ -221,7 +221,7 @@ sub get_method_fullname {
 sub name_camel_to_const {
 	my $name = shift;
 	if ($PREFIX_CLEANUP_RE) {
-		$name =~ s/$PREFIX_CLEANUP_RE//g;
+		$name =~ s/$PREFIX_CLEANUP_RE//;
 	}
 	$name =~ s/([a-z])([A-Z])/$1_$2/g;
 	return uc ($name);

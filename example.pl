@@ -20,7 +20,7 @@ die 'BASEDIR not specified' if $BASEDIR eq '';
 # Configuration:
 
 # When using arg names as prefix to find enums, remove the "Info" word.
-$Xam::Binding::Trans::PREFIX_CLEANUP_RE = qr/Info$/;
+$Xam::Binding::Trans::PREFIX_CLEANUP_RE = qr/Info$/g;
 
 # Consts named "SUCCESS" are ignored when looking for max common prefix.
 %Xam::Binding::Trans::ENUM_IGNORE_VALUES_FOR_ENUM_NAME = (
