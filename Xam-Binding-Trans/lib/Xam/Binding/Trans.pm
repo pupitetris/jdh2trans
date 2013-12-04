@@ -231,7 +231,8 @@ sub name_camel_to_const {
 	if ($ARG_PREFIX_CLEANUP_RE) {
 		$name =~ s/$ARG_PREFIX_CLEANUP_RE//g;
 	}
-	$name =~ s/([a-z])([A-Z])/$1_$2/g;
+	$name =~ s/([A-Z][^A-Z])/_$1/g;
+	$name =~ s/^_//;
 	return uc ($name);
 }
 
@@ -466,7 +467,7 @@ sub _type_enum_test {
 		# If method is a setter, override argname.
 		if ($method_name && $method_name =~ /^set/) {
 			$argname = $method_name;
-			$argname =~ s/^set([A-Z][^A-Z]+)/$1/;
+			$argname =~ s/^set([A-Z]+[^A-Z]+)/$1/;
 			if ($METHOD_PREFIX_CLEANUP_RE) {
 				$argname =~ s/$METHOD_PREFIX_CLEANUP_RE//;
 			}
@@ -476,7 +477,7 @@ sub _type_enum_test {
 		if ($method_name =~ /^get/) {
 			# Method is a getter.
 			$argname = $method_name;
-			$argname =~ s/^get([A-Z][^A-Z]+)/$1/;
+			$argname =~ s/^get([A-Z]+[^A-Z]+)/$1/;
 			if ($METHOD_PREFIX_CLEANUP_RE) {
 				$argname =~ s/$METHOD_PREFIX_CLEANUP_RE//;
 			}
