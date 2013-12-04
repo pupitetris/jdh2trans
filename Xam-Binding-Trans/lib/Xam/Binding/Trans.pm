@@ -452,7 +452,8 @@ sub _type_enum_test {
 	my $argname;
 	if ($method_name) {
 		if ($method_name =~ /^get/) {
-			$argname = substr ($method_name, 3);
+			$argname = $method_name;
+			$argname =~ s/^get([A-Z][^A-Z]+)(?:Type)?/$1/;
 		}
 	} elsif (scalar @toks > 2 && $toks[2] eq '-') {
 		$argname = $toks[1];
@@ -815,9 +816,6 @@ sub _parse_fields_for_class {
 					$new_const_num ++;
 				}
 			} else {
-				if (type_may_be_enum ($type)) {
-					$DB::single = 1;
-				}
 				$type = $self->_type_qualify ($type, $class, [], $li->parent, -2);
 			}
 
