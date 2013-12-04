@@ -221,7 +221,7 @@ sub get_method_fullname {
 sub name_camel_to_const {
 	my $name = shift;
 	if ($PREFIX_CLEANUP_RE) {
-		$name =~ s/$PREFIX_CLEANUP_RE//;
+		$name =~ s/$PREFIX_CLEANUP_RE//g;
 	}
 	$name =~ s/([a-z])([A-Z])/$1_$2/g;
 	return uc ($name);
@@ -276,8 +276,9 @@ sub find_max_common_prefix {
 	$name_min_idx = 0 if $name_min_idx == 999;
 
 	if (scalar (keys %$consts) == 1) {
-		# A ridiculous enumeration with only one value. Just take up to the penultimate word.
-		$name_min_idx = scalar @$prev_words;
+		# A ridiculous enumeration with only one value. Just take first word.
+		# (solves com.samsung.android.sdk.gesture.Sgesture.TYPE_HAND_PRIMITIVE)
+		$name_min_idx = 1;
 	}
 	
 	# These consts are not similar at all.
@@ -392,11 +393,14 @@ sub _create_enum_straight {
 	my $name = find_max_common_prefix ($consts);
 
 	if ($name ne '') {
-		$offset = length ($name) + 1;
-
 		# Now that we have a maningful prefix, try to find qualifying consts that may not
 		# have been mentioned in the documentation.
+		my $size = scalar keys %$consts;
 		$self->_collect_values_by_prefix ($a_const->{PKG} . '.' . $a_const->{CLASS} . '.' . $name, $consts);
+		# If we actually found more consts, recalculate prefix; it may have changed.
+		$name = find_max_common_prefix ($consts) if $size != scalar keys %$consts;
+
+		$offset = length ($name) + 1;
 	} else {
 		if (! defined $argname) {
 			$DB::single = 1;
