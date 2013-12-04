@@ -20,7 +20,11 @@ die 'BASEDIR not specified' if $BASEDIR eq '';
 # Configuration:
 
 # When using arg names as prefix to find enums, remove the "Info" and "Option" words.
-$Xam::Binding::Trans::PREFIX_CLEANUP_RE = qr/(?:Info|Option)$/;
+$Xam::Binding::Trans::ARG_PREFIX_CLEANUP_RE = qr/(?:Info|Option)$/;
+
+# When using get/set method names as prefix to find enums, remove the "Text" beginning word.
+# For a various SpenObjectTextBox set/getters.
+$Xam::Binding::Trans::METHOD_PREFIX_CLEANUP_RE = qr/(?:^Text|Type$)/;
 
 # Consts named "SUCCESS" are ignored when looking for max common prefix.
 %Xam::Binding::Trans::ENUM_IGNORE_VALUES_FOR_ENUM_NAME = (

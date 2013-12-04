@@ -136,13 +136,21 @@ Boolean, if true, ignore any constants whose type is not int (default 1, do igno
 
 our $ONLY_PARSE_INT_CONSTANTS = 1;
 
-=head2 PREFIX_CLEANUP_RE
+=head2 ARG_PREFIX_CLEANUP_RE
 
 Regular expression (use qr/myregexp/) to clean up names for arguments that are candidates for enums.
 
 =cut
 
-our $PREFIX_CLEANUP_RE;
+our $ARG_PREFIX_CLEANUP_RE;
+
+=head2 METHOD_PREFIX_CLEANUP_RE
+
+Regular expression (use qr/myregexp/) to clean up get/set method names used for candidates for enums.
+
+=cut
+
+our $METHOD_PREFIX_CLEANUP_RE;
 
 =head1 SEE ALSO
 
@@ -220,8 +228,8 @@ sub get_method_fullname {
 
 sub name_camel_to_const {
 	my $name = shift;
-	if ($PREFIX_CLEANUP_RE) {
-		$name =~ s/$PREFIX_CLEANUP_RE//g;
+	if ($ARG_PREFIX_CLEANUP_RE) {
+		$name =~ s/$ARG_PREFIX_CLEANUP_RE//g;
 	}
 	$name =~ s/([a-z])([A-Z])/$1_$2/g;
 	return uc ($name);
@@ -458,14 +466,20 @@ sub _type_enum_test {
 		# If method is a setter, override argname.
 		if ($method_name && $method_name =~ /^set/) {
 			$argname = $method_name;
-			$argname =~ s/^set([A-Z][^A-Z]+)(?:Type)?/$1/;
+			$argname =~ s/^set([A-Z][^A-Z]+)/$1/;
+			if ($METHOD_PREFIX_CLEANUP_RE) {
+				$argname =~ s/$METHOD_PREFIX_CLEANUP_RE//;
+			}
 		}
 	} elsif ($method_name) {
 		# Type belongs to a return value and a method name was provided.
 		if ($method_name =~ /^get/) {
 			# Method is a getter.
 			$argname = $method_name;
-			$argname =~ s/^get([A-Z][^A-Z]+)(?:Type)?/$1/;
+			$argname =~ s/^get([A-Z][^A-Z]+)/$1/;
+			if ($METHOD_PREFIX_CLEANUP_RE) {
+				$argname =~ s/$METHOD_PREFIX_CLEANUP_RE//;
+			}
 		}
 	}
 
