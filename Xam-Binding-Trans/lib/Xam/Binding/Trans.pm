@@ -450,14 +450,23 @@ sub _type_enum_test {
 	my @toks = split (/\s*[\s,*]\s*/, $dd->format);
 
 	my $argname;
-	if ($method_name) {
+	if (scalar @toks > 2 && $toks[2] eq '-') {
+		# Type belongs to an argument.
+		$argname = $toks[1];
+		splice @toks, 0, 3;
+
+		# If method is a setter, override argname.
+		if ($method_name && $method_name =~ /^set/) {
+			$argname = $method_name;
+			$argname =~ s/^set([A-Z][^A-Z]+)(?:Type)?/$1/;
+		}
+	} elsif ($method_name) {
+		# Type belongs to a return value and a method name was provided.
 		if ($method_name =~ /^get/) {
+			# Method is a getter.
 			$argname = $method_name;
 			$argname =~ s/^get([A-Z][^A-Z]+)(?:Type)?/$1/;
 		}
-	} elsif (scalar @toks > 2 && $toks[2] eq '-') {
-		$argname = $toks[1];
-		splice @toks, 0, 3;
 	}
 
 	my %values = ();
@@ -609,9 +618,9 @@ sub _parse_proto {
 	my @args = ();
 	my $argno = 0;
 	foreach my $pair (split (',', $args)) {
-		my ($type, $name) = split (' ', $pair);
-		$type = $self->_type_qualify ($type, $class, \@anchors, $ul, $argno);
-		push @args, { TYPE => $type, NAME => $name };
+		my ($type, $arg_name) = split (' ', $pair);
+		$type = $self->_type_qualify ($type, $class, \@anchors, $ul, $argno, $name);
+		push @args, { TYPE => $type, NAME => $arg_name };
 		$argno++;
 	}
 
