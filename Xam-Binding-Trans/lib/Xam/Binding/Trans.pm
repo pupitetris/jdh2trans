@@ -443,7 +443,7 @@ sub _create_enum_straight {
 sub _type_enum_test {
 	my $self = shift;
 	my $type = shift;
-	my $dd = shift;
+	my $dd = shift; # Element containing the description
 	my $class = shift;
 	my $method_name = shift;
 
@@ -539,7 +539,7 @@ sub _type_qualify {
 	my $type = shift;
 	my $class = shift;
 	my $anchors = shift;
-	my $ul = shift;
+	my $ul = shift; # HTML element class blockList* with full definition.
 	my $argno = shift;
 	my $method_name = shift;
 
@@ -553,9 +553,14 @@ sub _type_qualify {
 	my $dl = $ul->look_down (_tag => 'dl');
 	return $type if !defined $dl;
 
-	my $subtitle = ($argno < 0)?
-		'Returns:': 
-		'Parameters:';
+	my $subtitle;
+	if ($argno >= 0) {
+		$subtitle = 'Parameters:'; # A method argument
+	} elsif ($argno == -1) {
+		$subtitle = 'Returns:'; # A method return value
+	} else {
+		$subtitle = 'See Also:'; # A field
+	}
 
 	# Find the definition for the argument/return value we are analyzing.
 	my $found_dt = 0;
@@ -809,6 +814,11 @@ sub _parse_fields_for_class {
 					$is_enum_value = $self->_create_int_const ($class, $name, $new_const_num);
 					$new_const_num ++;
 				}
+			} else {
+				if (type_may_be_enum ($type)) {
+					$DB::single = 1;
+				}
+				$type = $self->_type_qualify ($type, $class, [], $li->parent, -2);
 			}
 
 			my $field = {
