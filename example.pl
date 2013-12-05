@@ -78,11 +78,6 @@ foreach my $key (keys %{$trans->{METHODS}}) {
 my $values = $trans->_collect_values_by_prefix ('com.samsung.android.sdk.imagefilter.SifImageFilter.FILTER_');
 $trans->_create_enum_straight ($values);
 
-# Documentation error: the valid values for the argument were put in the Returns: section.
-my $values = $trans->_collect_values_by_prefix ('com.samsung.android.sdk.motion.SmotionPedometer.Info.COUNT_');
-$trans->_method_set_arg_type ('com.samsung.android.sdk.motion.SmotionPedometer.Info.getCount(int)', 0,
-							  $trans->_create_enum_straight ($values));
-
 $DB::single = 1;
 
 #$trans->outEnumFields ('com.package.name', 'path/to/Transforms/EnumFields.xml');
