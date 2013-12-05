@@ -328,6 +328,7 @@ sub _method_set_arg_type {
 	# you can specify a fullname.
 	if (ref $meth eq '') {
 		my $m = $self->{METHODS}{$meth};
+		$DB::single = 1;
 		carp "Method $meth not found" if !$m;
 		$meth = $m;
 	}
@@ -465,9 +466,9 @@ sub _type_enum_test {
 		splice @toks, 0, 3;
 
 		# If method is a setter, override argname.
-		if ($method_name && $method_name =~ /^set/) {
+		if ($method_name && $method_name =~ /^(?:set|get)/) {
 			$argname = $method_name;
-			$argname =~ s/^set([A-Z]+[^A-Z]+)/$1/;
+			$argname =~ s/^(?:set|get)([A-Z]+[^A-Z]+)/$1/;
 			if ($METHOD_PREFIX_CLEANUP_RE) {
 				$argname =~ s/$METHOD_PREFIX_CLEANUP_RE//;
 			}
@@ -548,12 +549,10 @@ sub _type_enum_test {
 		carp "More than one prefix";
 	}
 
-	# Uff, try to use the argname as prefix to find relevant constants within the class.
+	# Uff, try to use the argname to find relevant constants.
 	if (defined $argname) {
-		my $prefix = $self->_collect_values_by_prefix ($class->{FULLNAME} . '.' . name_camel_to_const ($argname));
-		if (scalar (keys %$prefix) > 0) {
-			return type_replace_integer_with_enum ($type, $self->_create_enum_straight ($prefix));
-		}
+		return $self->_type_search_enum_by_name ($type, $argname,
+												 $class->{PKG}, $class->{FIELDS}, 0);
 	}
 
 	return $type;
@@ -642,44 +641,45 @@ sub _type_qualify {
 	
 	# Get the element with the definitions.
 	my $dl = $ul->look_down (_tag => 'dl');
-	if (!defined $dl) {
-		# No description element! OK, try by name...
-		if ($arg_name) {
-			return $self->_type_search_enum_by_name ($type, $arg_name,
-													 $class->{PKG}, $class->{FIELDS}, 0);
-		}
-		return $type;
-	}
+	if (defined $dl) {
 
-	my $subtitle;
-	if ($argno >= 0) {
-		$subtitle = 'Parameters:'; # A method argument
-	} elsif ($argno == -1) {
-		$subtitle = 'Returns:'; # A method return value
-	} else {
-		$subtitle = 'See Also:'; # A field
-	}
-
-	# Find the definition for the argument/return value we are analyzing.
-	my $found_dt = 0;
-	my $thisarg = 0;
-	foreach my $d ($dl->look_down (_tag => qr/d[td]/)) {
-		if ($d->tag eq 'dt') {
-			# The right dt has already been found and this is another dt, we failed.
-			last if $found_dt;
-
-			$found_dt = 1 if $d->as_text () eq $subtitle;
-			next;
+		my $subtitle;
+		if ($argno >= 0) {
+			$subtitle = 'Parameters:'; # A method argument
+		} elsif ($argno == -1) {
+			$subtitle = 'Returns:'; # A method return value
+		} else {
+			$subtitle = 'See Also:'; # A field
 		}
-		next if !$found_dt;
-		if ($argno < 0 || $thisarg == $argno) {
-			# OK, this dd has got the stuff we are looking for.
-			return $self->_type_enum_test ($type, $d, $class, $method_name);
+
+		# Find the definition for the argument/return value we are analyzing.
+		my $found_dt = 0;
+		my $thisarg = 0;
+		foreach my $d ($dl->look_down (_tag => qr/d[td]/)) {
+			if ($d->tag eq 'dt') {
+				# The right dt has already been found and this is another dt, we failed.
+				last if $found_dt;
+
+				$found_dt = 1 if $d->as_text () eq $subtitle;
+				next;
+			}
+			next if !$found_dt;
+			if ($argno < 0 || $thisarg == $argno) {
+				# OK, this dd has got the stuff we are looking for.
+				return $self->_type_enum_test ($type, $d, $class, $method_name);
+			}
+			$thisarg ++;
 		}
-		$thisarg ++;
+
 	}
 	
-	# We couldn't find the definition. Assume it's an ordinary type then.
+	# We couldn't find the definition. OK, try by name...
+	if ($arg_name) {
+		return $self->_type_search_enum_by_name ($type, $arg_name,
+												 $class->{PKG}, $class->{FIELDS}, 0);
+	}
+
+	# Everything failed. Assume it's an ordinary type then.
 	return $type;
 }
 
@@ -691,7 +691,7 @@ sub _parse_proto {
 	my $pre = $ul->look_down (_tag => 'pre');
 
 	my $str = $pre->as_text ();
-	$str =~ tr/\xA0 \r\n/ /d; # transform nbsp into space and remove all other white-space.
+	$str =~ s/[\xA0 \r\n]+/ /g; # collapse white space.
 
 	# get visibility, return value and arguments
 	$str =~ /^(public|protected|) ?(static|) ?(?:([^ ]*) )?([^(]+)\(([^)]*)\)/;
