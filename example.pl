@@ -74,10 +74,6 @@ foreach my $key (keys %{$trans->{METHODS}}) {
 	$trans->_method_set_arg_type ($meth, 0, $new_enum);
 }
 
-# One case where the author was lazy about enumerating tens of valid values.
-my $values = $trans->_collect_values_by_prefix ('com.samsung.android.sdk.imagefilter.SifImageFilter.FILTER_');
-$trans->_create_enum_straight ($values);
-
 $DB::single = 1;
 
 #$trans->outEnumFields ('com.package.name', 'path/to/Transforms/EnumFields.xml');
