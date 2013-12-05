@@ -339,6 +339,15 @@ sub _method_set_arg_type {
 	$meth->{FULLNAME} = get_method_fullname ($meth);
 	delete $self->{METHODS}{$fullname};
 	$self->{METHODS}{$meth->{FULLNAME}} = $meth;
+
+	my $class = $meth->{CLASS};
+	if ($meth->{TYPE} eq 'ctor') {
+		delete $class->{CTORS}{$fullname};
+		$class->{CTORS}{$meth->{FULLNAME}} = $meth;
+	} else {
+		delete $class->{METHODS}{$fullname};
+		$class->{METHODS}{$meth->{FULLNAME}} = $meth;
+	}
 }
 
 # Merge the enum key/value pairs into the existing enums.
@@ -928,7 +937,6 @@ sub _parse_fields_for_class {
 			};
 
 			$fields->{$fullname} = $field;
-			$self->{FIELDS}{$fullname} = $field;
 		}
 
 		$class->{FIELDS} = $fields;
