@@ -74,6 +74,14 @@ foreach my $key (keys %{$trans->{METHODS}}) {
 	$trans->_method_set_arg_type ($meth, 0, $new_enum);
 }
 
+# Animation types
+my $pkg = 'com.samsung.android.sdk.visualview.animation';
+my $values = $trans->_collect_values_by_prefix ($pkg . '.SVAnimation.');
+my $enum = $trans->_create_enum_straight ($values, 'TYPE');
+$trans->_method_set_arg_type ("$pkg.SVBasicAnimation.SVBasicAnimation(int,float[],float[])", 0, $enum);
+$trans->_method_set_arg_type ("$pkg.SVBasicAnimation.SVBasicAnimation(int,float,float)", 0, $enum);
+$trans->_method_set_arg_type ("$pkg.SVKeyFrameAnimation.SVKeyFrameAnimation(int)", 0, $enum);
+
 $DB::single = 1;
 
 #$trans->outEnumFields ('com.package.name', 'path/to/Transforms/EnumFields.xml');
@@ -93,5 +101,8 @@ print Dumper ($trans->{CONSTS});
 
 #$Data::Dumper::Varname = 'METHODS';
 #print Dumper ($trans->{METHODS});
+
+#$Data::Dumper::Varname = 'SELF';
+#print Dumper ($trans);
 
 1;
