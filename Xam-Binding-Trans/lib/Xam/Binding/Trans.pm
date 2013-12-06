@@ -32,7 +32,7 @@ Code sample:
     my $trans = Xam::Binding::Trans->new ();
     $trans->parse ('dir/to/javadoc-html');
     $trans->printEnumFieldMapping ('path/to/Transforms/EnumFields.xml', 'com.package.name');
-    $trans->printEnumMethods (\*STDOUT, 'com.package.name');
+    $trans->printEnumMethodMapping (\*STDOUT, 'com.package.name');
 
     ...
 
@@ -109,7 +109,7 @@ sub printEnumFieldMapping {
 	my @packages = @_;
 
 	if (scalar @packages == 0) {
-		@packages = @{$self->{PACKAGES}};
+		@packages = sort keys %{$self->{PACKAGES}};
 	}
 
 	my $fd;
@@ -128,10 +128,12 @@ sub printEnumFieldMapping {
 		my $jni_pkg = $pkgname;
 		$jni_pkg =~ tr#.#/#;
 		my $clr_pkg = substr (join ('.', map {ucfirst $_} split ('\.', $pkgname)), 4);
+
 		foreach my $class_key (sort keys %{$pkg->{CLASSES}}) {
 			my $class = $pkg->{CLASSES}{$class_key};
 			my $classname = $class->{NAME};
 			my $jni_class = "$jni_pkg/$classname";
+
 			foreach my $enum_key (sort keys %{$class->{ENUMS}}) {
 				my $enum = $class->{ENUMS}{$enum_key};
 				print $fd "\n\t<mapping\n";
@@ -153,14 +155,14 @@ sub printEnumFieldMapping {
 	print $fd "\n</enum-field-mappings>\n";
 }
 
-=head2 $obj->printEnumMethods (xml_file, packages ...)
+=head2 $obj->printEnumMethodMapping (xml_file, packages ...)
 
 Write an EnumMethods.xml mapping file for the given packages at the xml_file location. All loaded packages
 will be processed if no packages are specified.
 
 =cut
 
-sub printEnumMethods {
+sub printEnumMethodMapping {
 	my $self = shift;
 	my $xml_file = shift;
 	my @packages = @_;
