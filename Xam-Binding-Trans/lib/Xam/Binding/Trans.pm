@@ -31,7 +31,7 @@ Code sample:
 
     my $trans = Xam::Binding::Trans->new ();
     $trans->parse ('dir/to/javadoc-html');
-    $trans->outEnumFields ('com.package.name', 'path/to/Transforms/EnumFields.xml');
+    $trans->outEnumFieldMapping ('com.package.name', 'path/to/Transforms/EnumFields.xml');
     $trans->outEnumMethods ('com.package.name', 'path/to/Transforms/EnumMethods.xml');
 
     ...
@@ -92,17 +92,59 @@ sub parse {
 	$self->{METHODS} = $self->_parse_methods ($self->{CLASSES});
 }
 
-=head2 $obj->outEnumFields (xml_file, packages ...)
+=head2 $obj->outEnumFieldMapping (xml_file, packages ...)
 
 Write an EnumFields.xml mapping file for the given packages at the xml_file location. All loaded packages
 will be processed if no packages are specified.
 
 =cut
 
-sub outEnumFields {
+sub outEnumFieldMapping {
 	my $self = shift;
 	my $xml_file = shift;
 	my @packages = @_;
+
+	if (scalar @packages == 0) {
+		@packages = @{$self->{PACKAGES}};
+	}
+
+	my $fd;
+	if (ref $xml_file eq 'GLOB') {
+		$fd = $xml_file;
+	} else {
+		open $fd, ">$xml_file" || croak;
+	}
+
+	print $fd "<enum-field-mappings>\n";
+	
+	foreach my $pkgname (@packages) {
+		my $pkg = $self->{PACKAGES}{$pkgname};
+		croak "Package $pkgname not found" if !$pkg;
+		my $jni_pkg = $pkgname;
+		$jni_pkg =~ tr#.#/#;
+		my $clr_pkg = substr (join ('.', map {ucfirst $_} split ('\.', $pkgname)), 4);
+		foreach my $class (values %{$pkg->{CLASSES}}) {
+			my $classname = $class->{NAME};
+			my $jni_class = "$jni_pkg/$classname";
+			foreach my $enum_key (sort keys %{$class->{ENUMS}}) {
+				my $enum = $class->{ENUMS}{$enum_key};
+				print $fd "\n\t<mapping\n";
+				print $fd "\t\tclr-enum-type=\"$clr_pkg.$classname" . 
+					name_const_to_camel ($enum->{NAME}) . "\"\n";
+				print $fd "\t\tjni-class=\"$jni_pkg/$classname\">\n\n";
+				
+				foreach my $val (sort keys %{$enum->{PAIRS}}) {
+					my $pair = $enum->{PAIRS}{$val};
+					print $fd "\t\t<field jni-name=\"$pair->{CONST}{NAME}\" clr-name=\"" . 
+						name_const_to_camel ($pair->{NAME}) . "\" value=\"$val\" />\n";
+				}
+
+				print $fd "\t</mapping>\n";
+			}
+		}
+	}
+
+	print $fd "\n</enum-field-mappings>\n";
 }
 
 =head2 $obj->outEnumMethods (xml_file, packages ...)
@@ -236,6 +278,14 @@ sub name_camel_to_const {
 	return uc ($name);
 }
 
+sub name_const_to_camel {
+	my $name = shift;
+	if (!$name) {
+		$DB::single = 1;
+	}
+	return join ('', map {ucfirst (lc ($_))} split ('_', $name));
+}
+
 sub type_qualify {
 	my $type = shift;
 	my $class = shift;
@@ -328,7 +378,6 @@ sub _method_set_arg_type {
 	# you can specify a fullname.
 	if (ref $meth eq '') {
 		my $m = $self->{METHODS}{$meth};
-		$DB::single = 1;
 		carp "Method $meth not found" if !$m;
 		$meth = $m;
 	}
@@ -358,14 +407,18 @@ sub _enums_merge {
 	my $fullname = $enum->{FULLNAME};
 
 	my $orig = $self->{ENUMS}{$fullname};
-	return $self->{ENUMS}{$fullname} = $enum if !$orig;
+	if (!$orig) {
+		$enum->{CLASS}{ENUMS}{$fullname} = $enum;
+		$self->{ENUMS}{$fullname} = $enum;
+		return $enum;
+	}
 
 	my $orig_pairs = $orig->{PAIRS};
 	my $enum_pairs = $enum->{PAIRS};
 
 	foreach my $k (keys %$orig_pairs) {
 		if (exists $enum_pairs->{$k} && 
-			$orig_pairs->{$k} ne $enum_pairs->{$k}) {
+			$orig_pairs->{$k}{NAME} ne $enum_pairs->{$k}{NAME}) {
 			$DB::single = 1;
 			carp "Incompatible enums $fullname";
 		}
@@ -373,7 +426,7 @@ sub _enums_merge {
 
 	foreach my $k (keys %$enum_pairs) {
 		if (exists $orig_pairs->{$k}) {
-			if ($orig_pairs->{$k} ne $enum_pairs->{$k}) {
+			if ($orig_pairs->{$k}{NAME} ne $enum_pairs->{$k}{NAME}) {
 				$DB::single = 1;
 				carp "Incompatible enums $fullname";
 			}
@@ -444,15 +497,22 @@ sub _create_enum_straight {
 			}
 		}
 		
-		$pairs{$const->{VALUE}} = $valkey;
+		$pairs{$const->{VALUE}} = {
+			CONST => $const,
+			NAME => $valkey,
+			VAL => $const->{VALUE}
+		};
 		$const->{USED} = 1;
 	}
 
+	my $classname = $a_const->{PKG} . '.' . $a_const->{CLASS};
+
+	# Creating new enum
 	my $enum = bless {
-		CLASS => $a_const->{CLASS},
+		CLASS => $self->{CLASSES}{$classname},
 		PKG => $a_const->{PKG},
 		NAME => $name,
-		FULLNAME => $a_const->{PKG} . '.' . $a_const->{CLASS} . '.' . $name,
+		FULLNAME => "$classname.$name",
 		PAIRS => \%pairs
 	 }, 'ENUM';
 
@@ -721,6 +781,7 @@ sub _parse_proto {
 		$argno++;
 	}
 
+	# Creating new method
 	my $meth = {
 		CLASS => $class,
 		TYPE => $type,
@@ -742,9 +803,12 @@ sub _parse_packages {
 	open my $fd, "$self->{BASEDIR}/package-list" || croak "Package list file `$self->{BASEDIR}/package-list` not found.";
 	while (<$fd>) {
 		s/$EOL//;
+
+		# Creating new package
 		$packages{$_} = { 
 			NAME => $_,
-			CONSTS => {}
+			CONSTS => {},
+			CLASSES => {}
 		};
 	}
 	close $fd;
@@ -789,6 +853,8 @@ sub _parse_constants {
 			my $a = $tr->look_down (_tag => 'a');
 			my $fullname = $a->attr ('name');
 			my $pkg = pkg_from_fullname ($fullname);
+
+			# Creating new const
 			my $const = {
 				FULLNAME => $fullname,
 				NAME => name_from_fullname ($fullname),
@@ -813,6 +879,7 @@ sub _create_int_const {
 
 	my $fullname = $class->{FULLNAME} . '.' . $name;
 	
+	# Creating new const
 	my $const = {
 		FULLNAME => $fullname,
 		NAME => $name,
@@ -854,12 +921,18 @@ sub _parse_classes_from_pkg {
 		$name = ${$name->content}[0] if $type eq 'interface';
 		
 		my $fullname = $pkg . '.' . $name;
-		$classes->{$fullname} = {
+
+		# Creating new class
+		my $class = {
 			FULLNAME => $fullname,
 			PKG => $pkg,
 			NAME => $name,
-			TYPE => $type
+			TYPE => $type,
+			ENUMS => {}
 		};
+
+		$classes->{$fullname} = $class;
+		$self->{PACKAGES}{$pkg}{CLASSES}{$fullname} = $class;
 	}
 
 	return $classes;
@@ -925,6 +998,7 @@ sub _parse_fields_for_class {
 				$type = $self->_type_qualify ($type, $class, [], $li->parent, -2);
 			}
 
+			# Creating new field
 			my $field = {
 				FULLNAME => $fullname,
 				CLASS => $class,
