@@ -84,8 +84,8 @@ $trans->_method_set_arg_type ("$pkg.SVKeyFrameAnimation.SVKeyFrameAnimation(int)
 
 $DB::single = 1;
 
-$trans->outEnumFieldMapping (\*STDOUT, 'com.samsung.android.sdk');
-#$trans->outEnumMethods ('path/to/Transforms/EnumMethods.xml', 'com.package.name');
+$trans->printEnumFieldMapping (\*STDOUT, sort keys %{$trans->{PACKAGES}});
+#$trans->printEnumMethods ('path/to/Transforms/EnumMethods.xml', 'com.package.name');
 
 $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;

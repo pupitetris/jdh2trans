@@ -31,8 +31,8 @@ Code sample:
 
     my $trans = Xam::Binding::Trans->new ();
     $trans->parse ('dir/to/javadoc-html');
-    $trans->outEnumFieldMapping ('com.package.name', 'path/to/Transforms/EnumFields.xml');
-    $trans->outEnumMethods ('com.package.name', 'path/to/Transforms/EnumMethods.xml');
+    $trans->printEnumFieldMapping ('path/to/Transforms/EnumFields.xml', 'com.package.name');
+    $trans->printEnumMethods (\*STDOUT, 'com.package.name');
 
     ...
 
@@ -92,14 +92,18 @@ sub parse {
 	$self->{METHODS} = $self->_parse_methods ($self->{CLASSES});
 }
 
-=head2 $obj->outEnumFieldMapping (xml_file, packages ...)
+=head2 $obj->printEnumFieldMapping (xml_file, packages ...)
 
 Write an EnumFields.xml mapping file for the given packages at the xml_file location. All loaded packages
 will be processed if no packages are specified.
 
 =cut
 
-sub outEnumFieldMapping {
+sub numeric {
+	{ $a <=> $b }
+}
+
+sub printEnumFieldMapping {
 	my $self = shift;
 	my $xml_file = shift;
 	my @packages = @_;
@@ -120,10 +124,12 @@ sub outEnumFieldMapping {
 	foreach my $pkgname (@packages) {
 		my $pkg = $self->{PACKAGES}{$pkgname};
 		croak "Package $pkgname not found" if !$pkg;
+		print $fd "\n\n\t<!-- Package $pkgname -->\n";
 		my $jni_pkg = $pkgname;
 		$jni_pkg =~ tr#.#/#;
 		my $clr_pkg = substr (join ('.', map {ucfirst $_} split ('\.', $pkgname)), 4);
-		foreach my $class (values %{$pkg->{CLASSES}}) {
+		foreach my $class_key (sort keys %{$pkg->{CLASSES}}) {
+			my $class = $pkg->{CLASSES}{$class_key};
 			my $classname = $class->{NAME};
 			my $jni_class = "$jni_pkg/$classname";
 			foreach my $enum_key (sort keys %{$class->{ENUMS}}) {
@@ -133,10 +139,10 @@ sub outEnumFieldMapping {
 					name_const_to_camel ($enum->{NAME}) . "\"\n";
 				print $fd "\t\tjni-class=\"$jni_pkg/$classname\">\n\n";
 				
-				foreach my $val (sort keys %{$enum->{PAIRS}}) {
+				foreach my $val (sort numeric keys %{$enum->{PAIRS}}) {
 					my $pair = $enum->{PAIRS}{$val};
-					print $fd "\t\t<field jni-name=\"$pair->{CONST}{NAME}\" clr-name=\"" . 
-						name_const_to_camel ($pair->{NAME}) . "\" value=\"$val\" />\n";
+					print $fd "\t\t<field value=\"$val\" jni-name=\"$pair->{CONST}{NAME}\" clr-name=\"" . 
+						name_const_to_camel ($pair->{NAME}) . "\" />\n";
 				}
 
 				print $fd "\t</mapping>\n";
@@ -147,14 +153,14 @@ sub outEnumFieldMapping {
 	print $fd "\n</enum-field-mappings>\n";
 }
 
-=head2 $obj->outEnumMethods (xml_file, packages ...)
+=head2 $obj->printEnumMethods (xml_file, packages ...)
 
 Write an EnumMethods.xml mapping file for the given packages at the xml_file location. All loaded packages
 will be processed if no packages are specified.
 
 =cut
 
-sub outEnumMethods {
+sub printEnumMethods {
 	my $self = shift;
 	my $xml_file = shift;
 	my @packages = @_;
@@ -330,7 +336,7 @@ sub find_max_common_prefix {
 			last if $words[$i] ne $prev_words->[$i];
 		}
 		$name_min_idx = $i if $i < $name_min_idx;
-		last if $i <= 1; # can't be smaller, so we quit at this point.
+		last if $i < 1; # can't be smaller, so we quit at this point.
 	}
 	$name_min_idx = 0 if $name_min_idx == 999;
 
@@ -403,14 +409,60 @@ sub _method_set_arg_type {
 sub _enums_merge {
 	my $self = shift;
 	my $enum = shift;
+	my $orig = shift;
 
 	my $fullname = $enum->{FULLNAME};
 
-	my $orig = $self->{ENUMS}{$fullname};
 	if (!$orig) {
-		$enum->{CLASS}{ENUMS}{$fullname} = $enum;
-		$self->{ENUMS}{$fullname} = $enum;
-		return $enum;
+		$orig = $self->{ENUMS}{$fullname};
+		if (!$orig) {
+			$enum->{CLASS}{ENUMS}{$fullname} = $enum;
+			$self->{ENUMS}{$fullname} = $enum;
+			return $enum;
+		}
+	} else {
+		if ($enum->{NAME} ne '') {
+			my $offset = length ($orig->{NAME}) - length ($enum->{NAME});
+			if ($offset > 0) {
+				if ($enum->{NAME} ne substr ($orig->{NAME}, 0, -$offset)) {
+					$DB::single = 1;
+					carp "Incompatible enums $orig->{FULLNAME} and $enum->{FULLNAME}";
+				}
+				
+				# Name changed for the better: smaller prefix.
+				my $add = substr ($orig->{NAME}, -$offset);
+				$add =~ s/^_//;
+				
+				# Fixme: we should keep method fullnames consistent too.
+				$fullname = $enum->{FULLNAME};
+				delete $self->{ENUMS}{$orig->{FULLNAME}};
+				$self->{ENUMS}{$fullname} = $orig;
+				delete $orig->{CLASS}{ENUMS}{$orig->{FULLNAME}};
+				$orig->{CLASS}{ENUMS}{$fullname} = $orig;
+
+				$orig->{FULLNAME} = $fullname;
+				$orig->{NAME} = $enum->{NAME};
+
+				foreach my $pair (values %{$orig->{PAIRS}}) {
+					$pair->{NAME} = $add . '_' . $pair->{NAME};
+				}
+
+			} elsif ($offset < 0) {
+				if ($orig->{NAME} ne substr ($enum->{NAME}, 0, $offset)) {
+					$DB::single = 1;
+					carp "Incompatible enums $orig->{FULLNAME} and $enum->{FULLNAME}";
+				}
+
+				# enum prefix is bigger, adapt names to avoid incompatibility warnings.
+				my $add = substr ($enum->{NAME}, $offset);
+				$add =~ s/^_//;
+				
+				foreach my $pair (values %{$enum->{PAIRS}}) {
+					$pair->{NAME} = $add . '_' . $pair->{NAME};
+				}
+
+			}
+		}
 	}
 
 	my $orig_pairs = $orig->{PAIRS};
@@ -420,7 +472,7 @@ sub _enums_merge {
 		if (exists $enum_pairs->{$k} && 
 			$orig_pairs->{$k}{NAME} ne $enum_pairs->{$k}{NAME}) {
 			$DB::single = 1;
-			carp "Incompatible enums $fullname";
+			carp "Incompatible enums $fullname for value $k";
 		}
 	}
 
@@ -428,10 +480,11 @@ sub _enums_merge {
 		if (exists $orig_pairs->{$k}) {
 			if ($orig_pairs->{$k}{NAME} ne $enum_pairs->{$k}{NAME}) {
 				$DB::single = 1;
-				carp "Incompatible enums $fullname";
+				carp "Incompatible enums $fullname for value $k";
 			}
 		} else {
 			$orig_pairs->{$k} = $enum_pairs->{$k};
+			$orig_pairs->{$k}{CONST}{USED} = $orig;
 		}
 	}
 
@@ -443,9 +496,12 @@ sub _collect_values_by_prefix {
 	my $prefix = shift;
 	my $values = shift // {};
 
-	foreach my $key (keys %{$self->{CONSTS}}) {
+	OUTER: foreach my $key (keys %{$self->{CONSTS}}) {
 		my $const = $self->{CONSTS}{$key};
-		if ($key =~ /^$prefix/ && !exists $values->{$const->{NAME}}) {
+		if ($key =~ /^$prefix/ && !$const->{USED} && !exists $values->{$const->{NAME}}) {
+			foreach my $orig_const (values %$values) {
+				next OUTER if $orig_const->{VALUE} == $const->{VALUE};
+			}
 			$values->{$const->{NAME}} = $const;
 		}
 	}
@@ -460,6 +516,9 @@ sub _create_enum_straight {
 	my $argname = shift;
 
 	my $a_const = (values %$consts)[0];
+
+	my $orig;
+	$orig = $a_const->{USED} if $a_const->{USED};
 
 	my $offset;
 	my $name = find_max_common_prefix ($consts);
@@ -483,6 +542,16 @@ sub _create_enum_straight {
 		$offset = 0;
 	}
 	
+	my $classname = $a_const->{PKG} . '.' . $a_const->{CLASS};
+
+	# Creating new enum
+	my $enum = bless { 
+		CLASS => $self->{CLASSES}{$classname},
+		PKG => $a_const->{PKG},
+		NAME => $name,
+		FULLNAME => "$classname.$name"
+	}, 'ENUM';
+
 	# Build value-key pairs.
 	my %pairs = ();
 	foreach my $const (values %$consts) {
@@ -497,26 +566,23 @@ sub _create_enum_straight {
 			}
 		}
 		
+		# Creating new pair
 		$pairs{$const->{VALUE}} = {
 			CONST => $const,
 			NAME => $valkey,
 			VAL => $const->{VALUE}
 		};
-		$const->{USED} = 1;
+
+		if ($const->{USED} && $orig && $const->{USED} != $orig) {
+			$DB::single = 1;
+			carp "Reusing const $const->{FULLNAME}, orig $orig->{FULLNAME}, new $enum->{FULLNAME}";
+		}
+		$const->{USED} = ($orig)? $orig: $enum;
 	}
 
-	my $classname = $a_const->{PKG} . '.' . $a_const->{CLASS};
+	$enum->{PAIRS} = \%pairs;
 
-	# Creating new enum
-	my $enum = bless {
-		CLASS => $self->{CLASSES}{$classname},
-		PKG => $a_const->{PKG},
-		NAME => $name,
-		FULLNAME => "$classname.$name",
-		PAIRS => \%pairs
-	 }, 'ENUM';
-
-	return $self->_enums_merge ($enum);
+	return $self->_enums_merge ($enum, $orig);
 }
 
 sub _type_enum_test {
