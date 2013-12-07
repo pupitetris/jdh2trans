@@ -6,7 +6,7 @@
 # $ perl -I Xam-Binding-Trans/lib ./example.pl ~/SamsungSDK/source/external/Samsung_Mobile_SDK/Docs/API\ Reference
 
 use strict;
-#use warnings FATAL => 'all';
+use warnings FATAL => 'all';
 
 use Data::Dumper;
 use Xam::Binding::Trans;
