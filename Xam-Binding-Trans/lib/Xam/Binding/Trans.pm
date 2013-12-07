@@ -313,9 +313,9 @@ our $ARG_NAME_ENUM_EXCLUDE_RE;
 
 =head1 SEE ALSO
 
-    "Binding a Java Library (.jar)" from Xamarin, Inc.
+"Binding a Java Library (.jar)" from Xamarin, Inc.
 
-	L<http://docs.xamarin.com/guides/android/advanced_topics/java_integration_overview/binding_a_java_library_(.jar)/>
+L<http://docs.xamarin.com/guides/android/advanced_topics/java_integration_overview/binding_a_java_library_(.jar)/>
 
 =head1 AUTHOR
 
@@ -325,11 +325,11 @@ Arturo Espinosa, C<< <arturo.espinosa at xamarin.com> >>
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Xam::Binding::Trans
+	perldoc Xam::Binding::Trans
 
 Github project location for source code and bug reports:
 
-    L<https://github.com/pupitetris/jdh2trans>
+L<https://github.com/pupitetris/jdh2trans>
 
 =head1 LICENSE AND COPYRIGHT
 
@@ -339,7 +339,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    L<http://www.apache.org/licenses/LICENSE-2.0>
+L<http://www.apache.org/licenses/LICENSE-2.0>
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
