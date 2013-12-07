@@ -110,6 +110,20 @@ sub printEnumFieldMapping {
 
 	if (scalar @packages == 0) {
 		@packages = sort keys %{$self->{PACKAGES}};
+	} else {
+		for (my $i = 0; $i < scalar @packages; $i++) {
+			my $p = $packages[$i];
+			if (ref $p eq 'Regexp') {
+				splice (@packages, $i, 1);
+				foreach my $pkg (sort keys %{$self->{PACKAGES}}) {
+					if ($pkg =~ /$p/) {
+						splice (@packages, $i, 0, $pkg);
+						$i ++;
+					}
+				}
+				$i --; # For the re which was removed.
+			}
+		}
 	}
 
 	my $fd;
@@ -133,20 +147,27 @@ sub printEnumFieldMapping {
 			my $class = $pkg->{CLASSES}{$class_key};
 			my $classname = $class->{NAME};
 			my $jni_class = "$jni_pkg/$classname";
+			my $mapping_flag = 0; # We only print mapping tag if we find enums.
 
 			foreach my $enum_key (sort keys %{$class->{ENUMS}}) {
 				my $enum = $class->{ENUMS}{$enum_key};
-				print $fd "\n\t<mapping\n";
-				print $fd "\t\tclr-enum-type=\"$clr_pkg.$classname" . 
-					name_const_to_camel ($enum->{NAME}) . "\"\n";
-				print $fd "\t\tjni-class=\"$jni_pkg/$classname\">\n\n";
+
+				if (!$mapping_flag) {
+					$mapping_flag = 1;
+					print $fd "\n\t<mapping\n";
+					print $fd "\t\tclr-enum-type=\"$clr_pkg.$classname" . 
+						name_const_to_camel ($enum->{NAME}) . "\"\n";
+					print $fd "\t\tjni-class=\"$jni_pkg/$classname\">\n\n";
+				}
 				
 				foreach my $val (sort numeric keys %{$enum->{PAIRS}}) {
 					my $pair = $enum->{PAIRS}{$val};
 					print $fd "\t\t<field value=\"$val\" jni-name=\"$pair->{CONST}{NAME}\" clr-name=\"" . 
 						name_const_to_camel ($pair->{NAME}) . "\" />\n";
 				}
+			}
 
+			if ($mapping_flag) {
 				print $fd "\t</mapping>\n";
 			}
 		}
@@ -166,6 +187,86 @@ sub printEnumMethodMapping {
 	my $self = shift;
 	my $xml_file = shift;
 	my @packages = @_;
+
+	if (scalar @packages == 0) {
+		@packages = sort keys %{$self->{PACKAGES}};
+	} else {
+		for (my $i = 0; $i < scalar @packages; $i++) {
+			my $p = $packages[$i];
+			if (ref $p eq 'Regexp') {
+				splice (@packages, $i, 1);
+				foreach my $pkg (sort keys %{$self->{PACKAGES}}) {
+					if ($pkg =~ /$p/) {
+						splice (@packages, $i, 0, $pkg);
+						$i ++;
+					}
+				}
+				$i --; # For the re which was removed.
+			}
+		}
+	}
+
+	my $fd;
+	if (ref $xml_file eq 'GLOB') {
+		$fd = $xml_file;
+	} else {
+		open $fd, ">$xml_file" || croak;
+	}
+
+	print $fd "<enum-method-mappings>\n";
+
+	foreach my $pkgname (@packages) {
+		my $pkg = $self->{PACKAGES}{$pkgname};
+		croak "Package $pkgname not found" if !$pkg;
+		print $fd "\n\n\t<!-- Package $pkgname -->\n";
+		my $jni_pkg = $pkgname;
+		$jni_pkg =~ tr#.#/#;
+		my $clr_pkg = substr (join ('.', map {ucfirst $_} split ('\.', $pkgname)), 4);
+
+		foreach my $class_key (sort keys %{$pkg->{CLASSES}}) {
+			my $class = $pkg->{CLASSES}{$class_key};
+			my $classname = $class->{NAME};
+			my $jni_class = "$jni_pkg/$classname";
+			my $mapping_flag = 0; # We only print mapping tag if we find a suitable method.
+
+			foreach my $h ($class->{CTORS}, $class->{METHODS}) {
+				foreach my $meth_key (sort keys %$h) {
+					next if $meth_key !~ /enum:/;
+
+					if (!$mapping_flag) {
+						$mapping_flag = 1;
+						print $fd "\n\t<mapping\n";
+						print $fd "\t\tjni-class=\"$jni_pkg/$classname\">\n\n";
+					}
+
+					my $meth = $h->{$meth_key};
+					foreach my $arg (@{$meth->{ARGS}}) {
+						next if ref $arg->{TYPE} ne 'ENUM';
+						print $fd 
+							"\t\t<method\n" .
+							"\t\t\tjni-name=\"$meth->{NAME}\"\n" .
+							"\t\t\tparameter=\"$arg->{NAME}\"\n" .
+							"\t\t\tclr-enum-type=\"$clr_pkg.$classname" .
+							name_const_to_camel ($arg->{TYPE}{NAME}) . "\" />\n\n";
+					}
+					if (ref $meth->{RETURN} eq 'ENUM') {
+						print $fd 
+							"\t\t<method\n" .
+							"\t\t\tjni-name=\"$meth->{NAME}\"\n" .
+							"\t\t\tparameter=\"return\"\n" .
+							"\t\t\tclr-enum-type=\"$clr_pkg.$classname" .
+							name_const_to_camel ($meth->{RETURN}{NAME}) . "\" />\n\n";
+					}
+				}
+			}
+
+			if ($mapping_flag) {
+				print $fd "\t</mapping>\n";
+			}
+		}
+	}
+
+	print $fd "\n</enum-method-mappings>\n";
 }
 
 =head1 CONFIGURATION
@@ -201,6 +302,14 @@ Regular expression (use qr/myregexp/) to clean up get/set method names used for 
 =cut
 
 our $METHOD_PREFIX_CLEANUP_RE;
+
+=head2 ARG_NAME_ENUM_EXCLUDE_RE
+
+Regular expression (use qr/myregexp/) specifying those argument names that won't be checked to see if they are enums.
+
+=cut
+
+our $ARG_NAME_ENUM_EXCLUDE_RE;
 
 =head1 SEE ALSO
 
@@ -272,8 +381,10 @@ sub get_method_fullname {
 
 	return $meth->{CLASS}{FULLNAME} . '.' . $meth->{NAME} .
 		'(' . join (',', 
-					map { ref $_->{TYPE} eq 'ENUM'? 'enum ' . $_->{TYPE}{FULLNAME}: $_->{TYPE} } @{$meth->{ARGS}})
-		. ')';
+					map { ref $_->{TYPE} eq 'ENUM'? 'enum:' . $_->{TYPE}{FULLNAME}: $_->{TYPE} } @{$meth->{ARGS}})
+		. ')' . ($meth->{RETURN}? 
+				 '=' . (ref $meth->{RETURN} eq 'ENUM'? 'enum:' . $meth->{RETURN}{FULLNAME}: $meth->{RETURN}):
+				 '');
 }
 
 sub name_camel_to_const {
@@ -771,6 +882,7 @@ sub _type_qualify {
 	my $arg_name = shift;
 
 	$type = &type_qualify ($type, $class, $anchors);
+	return $type if $ARG_NAME_ENUM_EXCLUDE_RE && $arg_name && $arg_name =~ /$ARG_NAME_ENUM_EXCLUDE_RE/;
 	return $type if ! type_may_be_enum ($type);
 
 	# OK, the type uses an integer, try to see if such integer is an enum.
@@ -835,7 +947,13 @@ sub _parse_proto {
 
 	my ($visibility, $static, $ret, $name, $args) = ($1, $2, $3, $4, $5);
 
-	my $type = ($name eq $class->{NAME})? 'ctor': 'method';
+	my $type;
+	if ($name eq $class->{NAME}) {
+		$type = 'ctor';
+		$name = 'constructor';
+	} else {
+		$type = 'method';
+	}
 
 	my @anchors = $pre->look_down (_tag => 'a');
 	$ret = $self->_type_qualify ($ret, $class, \@anchors, $ul, -1, $name) if defined $ret;
@@ -845,7 +963,15 @@ sub _parse_proto {
 	foreach my $pair (split (',', $args)) {
 		my ($type, $arg_name) = split (' ', $pair);
 		$type = $self->_type_qualify ($type, $class, \@anchors, $ul, $argno, $name, $arg_name);
-		push @args, { TYPE => $type, NAME => $arg_name };
+
+		# Creating new arg
+		my $arg = { 
+			TYPE => $type, 
+			NAME => $arg_name,
+			POS => $argno
+		};
+
+		push @args, $arg;
 		$argno++;
 	}
 
@@ -996,6 +1122,8 @@ sub _parse_classes_from_pkg {
 			PKG => $pkg,
 			NAME => $name,
 			TYPE => $type,
+			METHODS => {},
+			CTORS => {},
 			ENUMS => {}
 		};
 

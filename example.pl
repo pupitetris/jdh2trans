@@ -26,6 +26,9 @@ $Xam::Binding::Trans::ARG_PREFIX_CLEANUP_RE = qr/(?:Info|Option)$/;
 # For a various SpenObjectTextBox set/getters.
 $Xam::Binding::Trans::METHOD_PREFIX_CLEANUP_RE = qr/(?:^Text|Type$)/;
 
+# duration (for com.samsung.android.sdk.visualview.SVSlide) is always in ms.
+$Xam::Binding::Trans::ARG_NAME_ENUM_EXCLUDE_RE = qr/^duration$/;
+
 # Consts named "SUCCESS" are ignored when looking for max common prefix.
 %Xam::Binding::Trans::ENUM_IGNORE_VALUES_FOR_ENUM_NAME = (
 	'SUCCESS' => 1
@@ -78,14 +81,14 @@ foreach my $key (keys %{$trans->{METHODS}}) {
 my $pkg = 'com.samsung.android.sdk.visualview.animation';
 my $values = $trans->_collect_values_by_prefix ($pkg . '.SVAnimation.');
 my $enum = $trans->_create_enum_straight ($values, 'TYPE');
-$trans->_method_set_arg_type ("$pkg.SVBasicAnimation.SVBasicAnimation(int,float[],float[])", 0, $enum);
-$trans->_method_set_arg_type ("$pkg.SVBasicAnimation.SVBasicAnimation(int,float,float)", 0, $enum);
-$trans->_method_set_arg_type ("$pkg.SVKeyFrameAnimation.SVKeyFrameAnimation(int)", 0, $enum);
+$trans->_method_set_arg_type ("$pkg.SVBasicAnimation.constructor(int,float[],float[])", 0, $enum);
+$trans->_method_set_arg_type ("$pkg.SVBasicAnimation.constructor(int,float,float)", 0, $enum);
+$trans->_method_set_arg_type ("$pkg.SVKeyFrameAnimation.constructor(int)", 0, $enum);
 
 $DB::single = 1;
 
-$trans->printEnumFieldMapping (\*STDOUT, sort keys %{$trans->{PACKAGES}});
-#$trans->printEnumMethods ('path/to/Transforms/EnumMethods.xml', 'com.package.name');
+#$trans->printEnumFieldMapping (\*STDOUT, sort keys %{$trans->{PACKAGES}});
+$trans->printEnumMethodMapping (\*STDOUT, qr/^com.samsung.android.sdk.visualview/);
 
 $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
