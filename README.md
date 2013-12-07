@@ -71,7 +71,7 @@ Regular expression (use qr/myregexp/) specifying those argument names that won't
 
 "Binding a Java Library (.jar)" from Xamarin, Inc.
 
-[http://docs.xamarin.com/guides/android/advanced_topics/java_integration_overview/binding_a_java_library_(.jar)/](http://docs.xamarin.com/guides/android/advanced_topics/java_integration_overview/binding_a_java_library_(.jar)/)
+[http://docs.xamarin.com/guides/android/advanced_topics/java_integration_overview/binding_a_java_library_(.jar%29/](http://docs.xamarin.com/guides/android/advanced_topics/java_integration_overview/binding_a_java_library_(.jar%29/)
 
 # AUTHOR
 

@@ -315,7 +315,7 @@ our $ARG_NAME_ENUM_EXCLUDE_RE;
 
 "Binding a Java Library (.jar)" from Xamarin, Inc.
 
-L<http://docs.xamarin.com/guides/android/advanced_topics/java_integration_overview/binding_a_java_library_(.jar)/>
+L<http://docs.xamarin.com/guides/android/advanced_topics/java_integration_overview/binding_a_java_library_(.jar%29/>
 
 =head1 AUTHOR
 
