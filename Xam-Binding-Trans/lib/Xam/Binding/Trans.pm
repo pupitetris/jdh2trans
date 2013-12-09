@@ -92,20 +92,8 @@ sub parse {
 	$self->{METHODS} = $self->_parse_methods ($self->{CLASSES});
 }
 
-=head2 $obj->printEnumFieldMapping (xml_file, packages ...)
-
-Write an EnumFields.xml mapping file for the given packages at the xml_file location. All loaded packages
-will be processed if no packages are specified.
-
-=cut
-
-sub numeric {
-	{ $a <=> $b }
-}
-
-sub printEnumFieldMapping {
+sub _selectPrintPackages {
 	my $self = shift;
-	my $xml_file = shift;
 	my @packages = @_;
 
 	if (scalar @packages == 0) {
@@ -126,6 +114,26 @@ sub printEnumFieldMapping {
 		}
 	}
 
+	return @packages;
+}
+
+sub numeric {
+	{ $a <=> $b }
+}
+
+=head2 $obj->printEnumFieldMapping (xml_file, packages ...)
+
+Write an EnumFields.xml mapping file for the given packages at the xml_file location. All loaded packages
+will be processed if no packages are specified.
+
+=cut
+
+sub printEnumFieldMapping {
+	my $self = shift;
+	my $xml_file = shift;
+
+	my @packages = $self->_selectPrintPackages (@_);
+
 	my $fd;
 	if (ref $xml_file eq 'GLOB') {
 		$fd = $xml_file;
@@ -139,9 +147,8 @@ sub printEnumFieldMapping {
 		my $pkg = $self->{PACKAGES}{$pkgname};
 		croak "Package $pkgname not found" if !$pkg;
 		print $fd "\n\n\t<!-- Package $pkgname -->\n";
-		my $jni_pkg = $pkgname;
-		$jni_pkg =~ tr#.#/#;
-		my $clr_pkg = substr (join ('.', map {ucfirst $_} split ('\.', $pkgname)), 4);
+		my $jni_pkg = pkgname_to_jni ($pkgname);
+		my $clr_pkg = pkgname_to_clr ($pkgname);
 
 		foreach my $class_key (sort keys %{$pkg->{CLASSES}}) {
 			my $class = $pkg->{CLASSES}{$class_key};
@@ -186,25 +193,8 @@ will be processed if no packages are specified.
 sub printEnumMethodMapping {
 	my $self = shift;
 	my $xml_file = shift;
-	my @packages = @_;
 
-	if (scalar @packages == 0) {
-		@packages = sort keys %{$self->{PACKAGES}};
-	} else {
-		for (my $i = 0; $i < scalar @packages; $i++) {
-			my $p = $packages[$i];
-			if (ref $p eq 'Regexp') {
-				splice (@packages, $i, 1);
-				foreach my $pkg (sort keys %{$self->{PACKAGES}}) {
-					if ($pkg =~ /$p/) {
-						splice (@packages, $i, 0, $pkg);
-						$i ++;
-					}
-				}
-				$i --; # For the re which was removed.
-			}
-		}
-	}
+	my @packages = $self->_selectPrintPackages (@_);
 
 	my $fd;
 	if (ref $xml_file eq 'GLOB') {
@@ -219,9 +209,8 @@ sub printEnumMethodMapping {
 		my $pkg = $self->{PACKAGES}{$pkgname};
 		croak "Package $pkgname not found" if !$pkg;
 		print $fd "\n\n\t<!-- Package $pkgname -->\n";
-		my $jni_pkg = $pkgname;
-		$jni_pkg =~ tr#.#/#;
-		my $clr_pkg = substr (join ('.', map {ucfirst $_} split ('\.', $pkgname)), 4);
+		my $jni_pkg = pkgname_to_jni ($pkgname);
+		my $clr_pkg = pkgname_to_clr ($pkgname);
 
 		foreach my $class_key (sort keys %{$pkg->{CLASSES}}) {
 			my $class = $pkg->{CLASSES}{$class_key};
@@ -240,14 +229,14 @@ sub printEnumMethodMapping {
 					}
 
 					my $meth = $h->{$meth_key};
-					foreach my $arg (@{$meth->{ARGS}}) {
-						next if ref $arg->{TYPE} ne 'ENUM';
+					foreach my $param (@{$meth->{PARAMS}}) {
+						next if ref $param->{TYPE} ne 'ENUM';
 						print $fd 
 							"\t\t<method\n" .
 							"\t\t\tjni-name=\"$meth->{NAME}\"\n" .
-							"\t\t\tparameter=\"$arg->{NAME}\"\n" .
+							"\t\t\tparameter=\"$param->{NAME}\"\n" .
 							"\t\t\tclr-enum-type=\"$clr_pkg.$classname" .
-							name_const_to_camel ($arg->{TYPE}{NAME}) . "\" />\n\n";
+							name_const_to_camel ($param->{TYPE}{NAME}) . "\" />\n\n";
 					}
 					if (ref $meth->{RETURN} eq 'ENUM') {
 						print $fd 
@@ -269,6 +258,73 @@ sub printEnumMethodMapping {
 	print $fd "\n</enum-method-mappings>\n";
 }
 
+=head2 $obj->printMetadata (xml_file, packages ...)
+
+Write an Metadata.xml file for the given packages at the xml_file location. All loaded packages
+will be processed if no packages are specified.
+
+=cut
+
+sub printMetadata {
+	my $self = shift;
+	my $xml_file = shift;
+
+	my @packages = $self->_selectPrintPackages (@_);
+
+	my $fd;
+	if (ref $xml_file eq 'GLOB') {
+		$fd = $xml_file;
+	} else {
+		open $fd, ">$xml_file" || croak;
+	}
+
+	print $fd "<metadata>\n";
+
+	print $fd "\n\t<!-- Fixing the namespaces -->\n";
+
+	foreach my $pkgname (@packages) {
+		my $pkg = $self->{PACKAGES}{$pkgname};
+		croak "Package $pkgname not found" if !$pkg;
+		my $jni_pkg = pkgname_to_jni ($pkgname);
+		my $clr_pkg = pkgname_to_clr ($pkgname);
+
+		print $fd "\t<attr path=\"/api/package[\@name='$pkgname']\" name=\"managedName\">$clr_pkg</attr>\n";
+	}
+
+	print $fd "\n\t<!-- Parameter names -->\n";
+
+	foreach my $pkgname (@packages) {
+		print $fd "\n\t<!-- Package $pkgname -->\n";
+		my $pkg = $self->{PACKAGES}{$pkgname};
+		my $jni_pkg = pkgname_to_jni ($pkgname);
+		my $clr_pkg = pkgname_to_clr ($pkgname);
+
+		foreach my $class_key (sort keys %{$pkg->{CLASSES}}) {
+			my $class = $pkg->{CLASSES}{$class_key};
+			my %known_meths = ();
+
+			foreach my $h ($class->{CTORS}, $class->{METHODS}) {
+				foreach my $meth_key (sort keys %$h) {
+					my $meth = $h->{$meth_key};
+					my $methname = $meth->{TYPE} eq 'constructor'?
+						$class->{NAME}:	$meth->{NAME};
+
+					my $num_params = scalar @{$meth->{PARAMS}};
+					my $count = $known_meths{$methname . $num_params} ++;
+					foreach my $param (@{$meth->{PARAMS}}) {
+						print $fd "\t<attr path=\"/api/package[\@name='$jni_pkg']/" . 
+							"$class->{TYPE}\[\@name='$class->{NAME}']/" . 
+							"$meth->{TYPE}\[\@name='$methname' and count(parameter)=$num_params][$count]/" . 
+							"parameter[position()=$param->{POS}]\" name=\"name\">$param->{NAME}</attr>\n";
+					}
+				}
+			}
+		}
+	}
+
+	print $fd "\n</metadata>\n";
+}
+
 =head1 CONFIGURATION
 
 =head2 ENUM_IGNORE_VALUES_FOR_ENUM_NAME
@@ -287,13 +343,13 @@ Boolean, if true, ignore any constants whose type is not int (default 1, do igno
 
 our $ONLY_PARSE_INT_CONSTANTS = 1;
 
-=head2 ARG_PREFIX_CLEANUP_RE
+=head2 PARAM_PREFIX_CLEANUP_RE
 
-Regular expression (use qr/myregexp/) to clean up names for arguments that are candidates for enums.
+Regular expression (use qr/myregexp/) to clean up names for parameters that are candidates for enums.
 
 =cut
 
-our $ARG_PREFIX_CLEANUP_RE;
+our $PARAM_PREFIX_CLEANUP_RE;
 
 =head2 METHOD_PREFIX_CLEANUP_RE
 
@@ -303,13 +359,13 @@ Regular expression (use qr/myregexp/) to clean up get/set method names used for 
 
 our $METHOD_PREFIX_CLEANUP_RE;
 
-=head2 ARG_NAME_ENUM_EXCLUDE_RE
+=head2 PARAM_NAME_ENUM_EXCLUDE_RE
 
-Regular expression (use qr/myregexp/) specifying those argument names that won't be checked to see if they are enums.
+Regular expression (use qr/myregexp/) specifying those parameter names that won't be checked to see if they are enums.
 
 =cut
 
-our $ARG_NAME_ENUM_EXCLUDE_RE;
+our $PARAM_NAME_ENUM_EXCLUDE_RE;
 
 =head1 SEE ALSO
 
@@ -381,7 +437,7 @@ sub get_method_fullname {
 
 	return $meth->{CLASS}{FULLNAME} . '.' . $meth->{NAME} .
 		'(' . join (',', 
-					map { ref $_->{TYPE} eq 'ENUM'? 'enum:' . $_->{TYPE}{FULLNAME}: $_->{TYPE} } @{$meth->{ARGS}})
+					map { ref $_->{TYPE} eq 'ENUM'? 'enum:' . $_->{TYPE}{FULLNAME}: $_->{TYPE} } @{$meth->{PARAMS}})
 		. ')' . ($meth->{RETURN}? 
 				 '=' . (ref $meth->{RETURN} eq 'ENUM'? 'enum:' . $meth->{RETURN}{FULLNAME}: $meth->{RETURN}):
 				 '');
@@ -389,8 +445,8 @@ sub get_method_fullname {
 
 sub name_camel_to_const {
 	my $name = shift;
-	if ($ARG_PREFIX_CLEANUP_RE) {
-		$name =~ s/$ARG_PREFIX_CLEANUP_RE//g;
+	if ($PARAM_PREFIX_CLEANUP_RE) {
+		$name =~ s/$PARAM_PREFIX_CLEANUP_RE//g;
 	}
 	$name =~ s/([A-Z][^A-Z])/_$1/g;
 	$name =~ s/^_//;
@@ -403,6 +459,22 @@ sub name_const_to_camel {
 		$DB::single = 1;
 	}
 	return join ('', map {ucfirst (lc ($_))} split ('_', $name));
+}
+
+sub pkgname_to_clr {
+	my $pkgname = shift;
+
+	my @words = split ('\.', $pkgname);
+	shift @words;
+	
+	return join ('.', map {ucfirst $_} @words);
+}
+
+sub pkgname_to_jni {
+	my $pkgname = shift;
+
+	$pkgname =~ tr#.#/#;
+	return $pkgname;
 }
 
 sub type_qualify {
@@ -488,10 +560,10 @@ sub type_replace_integer_with_enum {
 # The good stuff.
 
 # Change the type of a given method while keeping consistency.
-sub _method_set_arg_type {
+sub _method_set_param_type {
 	my $self = shift;
 	my $meth = shift;
-	my $argno = shift;
+	my $param_no = shift;
 	my $type = shift;
 
 	# you can specify a fullname.
@@ -501,7 +573,7 @@ sub _method_set_arg_type {
 		$meth = $m;
 	}
 
-	$meth->{ARGS}->[$argno]->{TYPE} = $type;
+	$meth->{PARAMS}->[$param_no]->{TYPE} = $type;
 
 	my $fullname = $meth->{FULLNAME};
 	$meth->{FULLNAME} = get_method_fullname ($meth);
@@ -509,7 +581,7 @@ sub _method_set_arg_type {
 	$self->{METHODS}{$meth->{FULLNAME}} = $meth;
 
 	my $class = $meth->{CLASS};
-	if ($meth->{TYPE} eq 'ctor') {
+	if ($meth->{TYPE} eq 'constructor') {
 		delete $class->{CTORS}{$fullname};
 		$class->{CTORS}{$meth->{FULLNAME}} = $meth;
 	} else {
@@ -626,7 +698,7 @@ sub _collect_values_by_prefix {
 sub _create_enum_straight {
 	my $self = shift;
 	my $consts = shift;
-	my $argname = shift;
+	my $param_name = shift;
 
 	my $a_const = (values %$consts)[0];
 
@@ -646,12 +718,12 @@ sub _create_enum_straight {
 
 		$offset = length ($name) + 1;
 	} else {
-		if (! defined $argname) {
+		if (! defined $param_name) {
 			$DB::single = 1;
 			carp "No max common prefix found for enum name";
 			return;
 		}
-		$name = name_camel_to_const ($argname);
+		$name = name_camel_to_const ($param_name);
 		$offset = 0;
 	}
 	
@@ -707,28 +779,28 @@ sub _type_enum_test {
 
 	my @toks = split (/\s*[\s,*]\s*/, $dd->format);
 
-	my $argname;
+	my $param_name;
 	if (scalar @toks > 2 && $toks[2] eq '-') {
-		# Type belongs to an argument.
-		$argname = $toks[1];
+		# Type belongs to an parameter.
+		$param_name = $toks[1];
 		splice @toks, 0, 3;
 
-		# If method is a setter, override argname.
+		# If method is a setter, override param_name.
 		if ($method_name && $method_name =~ /^(?:set|get)/) {
-			$argname = $method_name;
-			$argname =~ s/^(?:set|get)([A-Z]+[^A-Z]+)/$1/;
+			$param_name = $method_name;
+			$param_name =~ s/^(?:set|get)([A-Z]+[^A-Z]+)/$1/;
 			if ($METHOD_PREFIX_CLEANUP_RE) {
-				$argname =~ s/$METHOD_PREFIX_CLEANUP_RE//;
+				$param_name =~ s/$METHOD_PREFIX_CLEANUP_RE//;
 			}
 		}
 	} elsif ($method_name) {
 		# Type belongs to a return value and a method name was provided.
 		if ($method_name =~ /^get/) {
 			# Method is a getter.
-			$argname = $method_name;
-			$argname =~ s/^get([A-Z]+[^A-Z]+)/$1/;
+			$param_name = $method_name;
+			$param_name =~ s/^get([A-Z]+[^A-Z]+)/$1/;
 			if ($METHOD_PREFIX_CLEANUP_RE) {
-				$argname =~ s/$METHOD_PREFIX_CLEANUP_RE//;
+				$param_name =~ s/$METHOD_PREFIX_CLEANUP_RE//;
 			}
 		}
 	}
@@ -772,14 +844,14 @@ sub _type_enum_test {
 		if ($hist_for_class &&
 			scalar (keys %$hist_for_class) == scalar (keys %values)) {
 			# We got all of our bases covered with the consts we found in the current class.
-			return type_replace_integer_with_enum ($type, $self->_create_enum_straight ($hist_for_class, $argname));
+			return type_replace_integer_with_enum ($type, $self->_create_enum_straight ($hist_for_class, $param_name));
 		}
 
 		if (scalar (keys %prefix_hist) == 1) {
 			# Only one prefix found, great!
 			if ($found == scalar (keys %values)) {
 				# No duplicate candidates, yay.
-				return type_replace_integer_with_enum ($type, $self->_create_enum_straight (\%values, $argname));
+				return type_replace_integer_with_enum ($type, $self->_create_enum_straight (\%values, $param_name));
 			} else {
 				$DB::single = 1;
 				carp "Multiple candidates found";
@@ -789,7 +861,7 @@ sub _type_enum_test {
 		foreach my $prefix (values %prefix_hist) {
 			if (scalar (keys %$prefix) == scalar (keys %values)) {
 				# All bases covered with the consts found in this prefix.
-				return type_replace_integer_with_enum ($type, $self->_create_enum_straight ($prefix, $argname));
+				return type_replace_integer_with_enum ($type, $self->_create_enum_straight ($prefix, $param_name));
 			}
 		}
 
@@ -797,9 +869,9 @@ sub _type_enum_test {
 		carp "More than one prefix";
 	}
 
-	# Uff, try to use the argname to find relevant constants.
-	if (defined $argname) {
-		return $self->_type_search_enum_by_name ($type, $argname,
+	# Uff, try to use the param_name to find relevant constants.
+	if (defined $param_name) {
+		return $self->_type_search_enum_by_name ($type, $param_name,
 												 $class->{PKG}, $class->{FIELDS}, 0);
 	}
 
@@ -816,7 +888,7 @@ sub _type_search_enum_by_name {
 
 	return $type if !type_may_be_enum ($type);
 
-	# Take all but the last word, in const format.
+	# Take up to the second-to-last word.
 	my $str = name_camel_to_const ($name);
 	$str =~ s/_[^_]+$/_/;
 
@@ -877,12 +949,12 @@ sub _type_qualify {
 	my $class = shift;
 	my $anchors = shift;
 	my $ul = shift; # HTML element class blockList* with full definition.
-	my $argno = shift;
+	my $param_no = shift;
 	my $method_name = shift;
-	my $arg_name = shift;
+	my $param_name = shift;
 
 	$type = &type_qualify ($type, $class, $anchors);
-	return $type if $ARG_NAME_ENUM_EXCLUDE_RE && $arg_name && $arg_name =~ /$ARG_NAME_ENUM_EXCLUDE_RE/;
+	return $type if $PARAM_NAME_ENUM_EXCLUDE_RE && $param_name && $param_name =~ /$PARAM_NAME_ENUM_EXCLUDE_RE/;
 	return $type if ! type_may_be_enum ($type);
 
 	# OK, the type uses an integer, try to see if such integer is an enum.
@@ -893,17 +965,17 @@ sub _type_qualify {
 	if (defined $dl) {
 
 		my $subtitle;
-		if ($argno >= 0) {
-			$subtitle = 'Parameters:'; # A method argument
-		} elsif ($argno == -1) {
+		if ($param_no >= 0) {
+			$subtitle = 'Parameters:'; # A method parameter
+		} elsif ($param_no == -1) {
 			$subtitle = 'Returns:'; # A method return value
 		} else {
 			$subtitle = 'See Also:'; # A field
 		}
 
-		# Find the definition for the argument/return value we are analyzing.
+		# Find the definition for the parameter/return value we are analyzing.
 		my $found_dt = 0;
-		my $thisarg = 0;
+		my $thisparam = 0;
 		foreach my $d ($dl->look_down (_tag => qr/d[td]/)) {
 			if ($d->tag eq 'dt') {
 				# The right dt has already been found and this is another dt, we failed.
@@ -913,18 +985,18 @@ sub _type_qualify {
 				next;
 			}
 			next if !$found_dt;
-			if ($argno < 0 || $thisarg == $argno) {
+			if ($param_no < 0 || $thisparam == $param_no) {
 				# OK, this dd has got the stuff we are looking for.
 				return $self->_type_enum_test ($type, $d, $class, $method_name);
 			}
-			$thisarg ++;
+			$thisparam ++;
 		}
 
 	}
 	
 	# We couldn't find the definition. OK, try by name...
-	if ($arg_name) {
-		return $self->_type_search_enum_by_name ($type, $arg_name,
+	if ($param_name) {
+		return $self->_type_search_enum_by_name ($type, $param_name,
 												 $class->{PKG}, $class->{FIELDS}, 0);
 	}
 
@@ -942,14 +1014,14 @@ sub _parse_proto {
 	my $str = $pre->as_text ();
 	$str =~ s/[\xA0 \r\n]+/ /g; # collapse white space.
 
-	# get visibility, return value and arguments
+	# get visibility, return value and parameters
 	$str =~ /^(public|protected|) ?(static|) ?(?:([^ ]*) )?([^(]+)\(([^)]*)\)/;
 
-	my ($visibility, $static, $ret, $name, $args) = ($1, $2, $3, $4, $5);
+	my ($visibility, $static, $ret, $name, $params) = ($1, $2, $3, $4, $5);
 
 	my $type;
 	if ($name eq $class->{NAME}) {
-		$type = 'ctor';
+		$type = 'constructor';
 		$name = 'constructor';
 	} else {
 		$type = 'method';
@@ -958,21 +1030,21 @@ sub _parse_proto {
 	my @anchors = $pre->look_down (_tag => 'a');
 	$ret = $self->_type_qualify ($ret, $class, \@anchors, $ul, -1, $name) if defined $ret;
 
-	my @args = ();
-	my $argno = 0;
-	foreach my $pair (split (',', $args)) {
-		my ($type, $arg_name) = split (' ', $pair);
-		$type = $self->_type_qualify ($type, $class, \@anchors, $ul, $argno, $name, $arg_name);
+	my @params = ();
+	my $param_no = 0;
+	foreach my $pair (split (',', $params)) {
+		my ($type, $param_name) = split (' ', $pair);
+		$type = $self->_type_qualify ($type, $class, \@anchors, $ul, $param_no, $name, $param_name);
 
-		# Creating new arg
-		my $arg = { 
+		# Creating new param
+		my $param = { 
 			TYPE => $type, 
-			NAME => $arg_name,
-			POS => $argno
+			NAME => $param_name,
+			POS => $param_no
 		};
 
-		push @args, $arg;
-		$argno++;
+		push @params, $param;
+		$param_no++;
 	}
 
 	# Creating new method
@@ -983,7 +1055,7 @@ sub _parse_proto {
 		STATIC => $static,
 		RETURN => $ret,
 		NAME => $name,
-		ARGS => \@args
+		PARAMS => \@params
 	};
 
 	$meth->{FULLNAME} = get_method_fullname ($meth);
@@ -1165,7 +1237,7 @@ sub _parse_fields_for_class {
 			my $str = $pre->as_text ();
 			$str =~ s/[\xA0 \r\n]+/ /g; # collapse white space.
 
-			# get visibility, return value and arguments
+			# get visibility, return value and parameters
 			$str =~ /^(public|protected|) ?(static|) ?(final|) ?(?:([^ ]*) )?/;
 
 			my ($visibility, $static, $final, $type) = ($1, $2, $3, $4);
