@@ -13,11 +13,11 @@ Xam::Binding::Trans - Generate Enum mappings for Xamarin Studio binding library 
 
 =head1 VERSION
 
-Version 0.01
+Version 0.9
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.9';
 
 =head1 SYNOPSIS
 
@@ -31,8 +31,9 @@ Code sample:
 
     my $trans = Xam::Binding::Trans->new ();
     $trans->parse ('dir/to/javadoc-html');
-    $trans->printEnumFieldMapping ('path/to/Transforms/EnumFields.xml', 'com.package.name');
-    $trans->printEnumMethodMapping (\*STDOUT, 'com.package.name');
+    $trans->printEnumFieldMapping ('path/to/Transforms/EnumFields.xml'); # All found packages by default.
+    $trans->printEnumMethodMapping (\*STDOUT, 'com.package.name', 'com.other.package'); # Two packages.
+    $trans->printMetadata (\*STDOUT, qr/^com.package.name/); # com.package.name and all of its subpackages.
 
     ...
 

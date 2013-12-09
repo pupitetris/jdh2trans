@@ -4,7 +4,7 @@ Xam::Binding::Trans - Generate Enum mappings for Xamarin Studio binding library 
 
 # VERSION
 
-Version 0.01
+Version 0.9
 
 # SYNOPSIS
 
@@ -18,8 +18,9 @@ Code sample:
 
     my $trans = Xam::Binding::Trans->new ();
     $trans->parse ('dir/to/javadoc-html');
-    $trans->printEnumFieldMapping ('path/to/Transforms/EnumFields.xml', 'com.package.name');
-    $trans->printEnumMethodMapping (\*STDOUT, 'com.package.name');
+    $trans->printEnumFieldMapping ('path/to/Transforms/EnumFields.xml'); # All found packages by default.
+    $trans->printEnumMethodMapping (\*STDOUT, 'com.package.name', 'com.other.package'); # Two packages.
+    $trans->printMetadata (\*STDOUT, qr/^com.package.name/); # com.package.name and all of its subpackages.
 
     ...
 
@@ -45,6 +46,11 @@ will be processed if no packages are specified.
 Write an EnumMethods.xml mapping file for the given packages at the xml\_file location. All loaded packages
 will be processed if no packages are specified.
 
+## $obj->printMetadata (xml\_file, packages ...)
+
+Write an Metadata.xml file for the given packages at the xml\_file location. All loaded packages
+will be processed if no packages are specified.
+
 # CONFIGURATION
 
 ## ENUM\_IGNORE\_VALUES\_FOR\_ENUM\_NAME
@@ -55,17 +61,17 @@ A hash whose keys indicate enum values that will not be used to infer enumeratio
 
 Boolean, if true, ignore any constants whose type is not int (default 1, do ignore).
 
-## ARG\_PREFIX\_CLEANUP\_RE
+## PARAM\_PREFIX\_CLEANUP\_RE
 
-Regular expression (use qr/myregexp/) to clean up names for arguments that are candidates for enums.
+Regular expression (use qr/myregexp/) to clean up names for parameters that are candidates for enums.
 
 ## METHOD\_PREFIX\_CLEANUP\_RE
 
 Regular expression (use qr/myregexp/) to clean up get/set method names used for candidates for enums.
 
-## ARG\_NAME\_ENUM\_EXCLUDE\_RE
+## PARAM\_NAME\_ENUM\_EXCLUDE\_RE
 
-Regular expression (use qr/myregexp/) specifying those argument names that won't be checked to see if they are enums.
+Regular expression (use qr/myregexp/) specifying those parameter names that won't be checked to see if they are enums.
 
 # SEE ALSO
 
