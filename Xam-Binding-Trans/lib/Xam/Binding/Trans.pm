@@ -288,20 +288,20 @@ sub printMetadata {
 		my $jni_pkg = pkgname_to_jni ($pkgname);
 		my $clr_pkg = pkgname_to_clr ($pkgname);
 
-		print $fd "\t<attr path=\"/api/package[\@name='$pkgname']\" name=\"managedName\">$clr_pkg</attr>\n";
+		print $fd "\t\t<attr path=\"/api/package[\@name='$pkgname']\" name=\"managedName\">$clr_pkg</attr>\n";
 	}
 
 	print $fd "\n\t<!-- Parameter names -->\n";
 
 	foreach my $pkgname (@packages) {
-		print $fd "\n\t<!-- Package $pkgname -->\n";
+		print $fd "\t\t<!-- Package $pkgname -->\n";
 		my $pkg = $self->{PACKAGES}{$pkgname};
-		my $jni_pkg = pkgname_to_jni ($pkgname);
-		my $clr_pkg = pkgname_to_clr ($pkgname);
 
 		foreach my $class_key (sort keys %{$pkg->{CLASSES}}) {
 			my $class = $pkg->{CLASSES}{$class_key};
 			my %known_meths = ();
+
+			print $fd "\t\t\t<!-- Class $class->{NAME} -->\n";
 
 			foreach my $h ($class->{CTORS}, $class->{METHODS}) {
 				foreach my $meth_key (sort keys %$h) {
@@ -310,9 +310,13 @@ sub printMetadata {
 						$class->{NAME}:	$meth->{NAME};
 
 					my $num_params = scalar @{$meth->{PARAMS}};
+					next if $num_params == 0;
+
+					print $fd "\t\t\t\t<!-- Method $meth->{PROTO} -->\n";
+
 					my $count = $known_meths{$methname . $num_params} ++;
 					foreach my $param (@{$meth->{PARAMS}}) {
-						print $fd "\t<attr path=\"/api/package[\@name='$jni_pkg']/" . 
+						print $fd "\t\t\t\t\t<attr path=\"/api/package[\@name='$pkgname']/" . 
 							"$class->{TYPE}\[\@name='$class->{NAME}']/" . 
 							"$meth->{TYPE}\[\@name='$methname' and count(parameter)=$num_params][$count]/" . 
 							"parameter[position()=$param->{POS}]\" name=\"name\">$param->{NAME}</attr>\n";
@@ -1032,19 +1036,30 @@ sub _parse_proto {
 
 	my @params = ();
 	my $param_no = 0;
+	my $param_type = '';
 	foreach my $pair (split (',', $params)) {
-		my ($type, $param_name) = split (' ', $pair);
-		$type = $self->_type_qualify ($type, $class, \@anchors, $ul, $param_no, $name, $param_name);
+		my ($t, $param_name) = split (' ', $pair);
+		$param_type .= $t;
+
+		# Types with generics may contain commas, go get the next portion of the type.
+		if (!$param_name) {
+			$param_type .= ',';
+			next;
+		}
+
+		$param_type = $self->_type_qualify ($param_type, $class, \@anchors, $ul, $param_no, $name, $param_name);
 
 		# Creating new param
 		my $param = { 
-			TYPE => $type, 
+			TYPE => $param_type, 
 			NAME => $param_name,
 			POS => $param_no
 		};
 
 		push @params, $param;
 		$param_no++;
+
+		$param_type = '';
 	}
 
 	# Creating new method
@@ -1055,6 +1070,7 @@ sub _parse_proto {
 		STATIC => $static,
 		RETURN => $ret,
 		NAME => $name,
+		PROTO => $str,
 		PARAMS => \@params
 	};
 
