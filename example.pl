@@ -19,15 +19,15 @@ die 'BASEDIR not specified' if $BASEDIR eq '';
 
 # Configuration:
 
-# When using arg names as prefix to find enums, remove the "Info" and "Option" words.
-$Xam::Binding::Trans::ARG_PREFIX_CLEANUP_RE = qr/(?:Info|Option)$/;
+# When using param names as prefix to find enums, remove the "Info" and "Option" words.
+$Xam::Binding::Trans::PARAM_PREFIX_CLEANUP_RE = qr/(?:Info|Option)$/;
 
 # When using get/set method names as prefix to find enums, remove the "Text" beginning word.
 # For a various SpenObjectTextBox set/getters.
 $Xam::Binding::Trans::METHOD_PREFIX_CLEANUP_RE = qr/(?:^Text|Type$)/;
 
 # duration (for com.samsung.android.sdk.visualview.SVSlide) is always in ms.
-$Xam::Binding::Trans::ARG_NAME_ENUM_EXCLUDE_RE = qr/^duration$/;
+$Xam::Binding::Trans::PARAM_NAME_ENUM_EXCLUDE_RE = qr/^duration$/;
 
 # Consts named "SUCCESS" are ignored when looking for max common prefix.
 %Xam::Binding::Trans::ENUM_IGNORE_VALUES_FOR_ENUM_NAME = (
@@ -48,20 +48,19 @@ foreach my $key (keys %{$trans->{METHODS}}) {
 	next if $key !~ /isFeatureEnabled\(int\)$/;
 
 	my $meth = $trans->{METHODS}->{$key};
-	my $argname = uc ($meth->{ARGS}->[0]->{NAME});
-	$argname = 'FEATURE' if $argname eq 'ID';
-	my $prefix = $meth->{CLASS}->{FULLNAME} . ".${argname}_";
+	my $param_name = uc ($meth->{PARAMS}->[0]->{NAME});
+	$param_name = 'FEATURE' if $param_name eq 'ID';
+	my $prefix = $meth->{CLASS}->{FULLNAME} . ".${param_name}_";
 	my $values = $trans->_collect_values_by_prefix ($prefix);
 
-	my $argname;
 	if (scalar keys %$values == 0) {
 		# Maybe nasty consts with unconventional names.
 		if ($key eq 'com.samsung.android.sdk.multiwindow.SMultiWindow.isFeatureEnabled(int)') {
 			$values = $trans->_collect_values_by_prefix ('com.samsung.android.sdk.multiwindow.SMultiWindow.MULTIWINDOW');
-			$argname = 'type';
+			$param_name = 'type';
 		} elsif ($key eq 'com.samsung.android.sdk.pen.Spen.isFeatureEnabled(int)') {
 			$values = $trans->_collect_values_by_prefix ('com.samsung.android.sdk.pen.Spen.DEVICE_');
-			$argname = 'type';
+			$param_name = 'type';
 		} else {
 			# OK, maybe it is not implemented.
 			next;
@@ -73,22 +72,23 @@ foreach my $key (keys %{$trans->{METHODS}}) {
 		die;
 	}
 
-	my $new_enum = $trans->_create_enum_straight ($values, $argname);
-	$trans->_method_set_arg_type ($meth, 0, $new_enum);
+	my $new_enum = $trans->_create_enum_straight ($values, $param_name);
+	$trans->_method_set_param_type ($meth, 0, $new_enum);
 }
 
 # Animation types
 my $pkg = 'com.samsung.android.sdk.visualview.animation';
 my $values = $trans->_collect_values_by_prefix ($pkg . '.SVAnimation.');
 my $enum = $trans->_create_enum_straight ($values, 'TYPE');
-$trans->_method_set_arg_type ("$pkg.SVBasicAnimation.constructor(int,float[],float[])", 0, $enum);
-$trans->_method_set_arg_type ("$pkg.SVBasicAnimation.constructor(int,float,float)", 0, $enum);
-$trans->_method_set_arg_type ("$pkg.SVKeyFrameAnimation.constructor(int)", 0, $enum);
+$trans->_method_set_param_type ("$pkg.SVBasicAnimation.constructor(int,float[],float[])", 0, $enum);
+$trans->_method_set_param_type ("$pkg.SVBasicAnimation.constructor(int,float,float)", 0, $enum);
+$trans->_method_set_param_type ("$pkg.SVKeyFrameAnimation.constructor(int)", 0, $enum);
 
 $DB::single = 1;
 
 #$trans->printEnumFieldMapping (\*STDOUT, sort keys %{$trans->{PACKAGES}});
-$trans->printEnumMethodMapping (\*STDOUT, qr/^com.samsung.android.sdk.visualview/);
+#$trans->printEnumMethodMapping (\*STDOUT, qr/^com.samsung.android.sdk.visualview/);
+$trans->printMetadata (\*STDOUT);
 
 $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
