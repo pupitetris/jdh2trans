@@ -86,9 +86,11 @@ $trans->_method_set_param_type ("$pkg.SVKeyFrameAnimation.constructor(int)", 0, 
 
 $DB::single = 1;
 
+$trans->dump ();
+
 #$trans->printEnumFieldMapping (\*STDOUT, sort keys %{$trans->{PACKAGES}});
 #$trans->printEnumMethodMapping (\*STDOUT, qr/^com.samsung.android.sdk.visualview/);
-$trans->printMetadata (\*STDOUT);
+#$trans->printMetadata (\*STDOUT);
 
 $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
