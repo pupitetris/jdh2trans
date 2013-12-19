@@ -98,8 +98,8 @@ my $pkg;
 
 $pkg = 'com.samsung.android.sdk';
 $dir = $BASEDIR . '/Samsung.Android.Sdk/Transforms';
-$trans->printEnumFieldMapping ($dir . '/EnumFields-2.xml', $pkg);
-$trans->printEnumMethodMapping ($dir . '/EnumMethods-2.xml', $pkg);
-$trans->printMetadata ($dir . '/Metadata-2.xml', $pkg);
+$trans->printEnumFieldMapping ($dir . '/EnumFields.xml', $pkg);
+$trans->printEnumMethodMapping ($dir . '/EnumMethods.xml', $pkg);
+$trans->printMetadata ($dir . '/Metadata.xml', $pkg);
 
 1;
