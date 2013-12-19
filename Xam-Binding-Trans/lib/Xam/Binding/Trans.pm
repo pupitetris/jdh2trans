@@ -101,7 +101,7 @@ sub dump {
 	$d->Sortkeys (1);
 
 	print $fd $d->Dump ();
-	print $fd "\$self;\n";
+	print $fd "\$self;\n"; # so that 'do' returns the object at the end when loading.
 
 	close $fd;
 }
