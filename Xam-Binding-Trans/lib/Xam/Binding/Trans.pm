@@ -200,27 +200,21 @@ sub printEnumFieldMapping {
 			my $class = $pkg->{CLASSES}{$class_key};
 			my $classname = $class->{NAME};
 			my $jni_class = "$jni_pkg/$classname";
-			my $mapping_flag = 0; # We only print mapping tag if we find enums.
 
 			foreach my $enum_key (sort keys %{$class->{ENUMS}}) {
 				my $enum = $class->{ENUMS}{$enum_key};
 
-				if (!$mapping_flag) {
-					$mapping_flag = 1;
-					print $fd "\n\t<mapping\n";
-					print $fd "\t\tclr-enum-type=\"$clr_pkg.$classname" . 
-						name_const_to_camel ($enum->{NAME}) . "\"\n";
-					print $fd "\t\tjni-class=\"$jni_pkg/$classname\">\n\n";
-				}
+				print $fd "\n\t<mapping\n";
+				print $fd "\t\tclr-enum-type=\"$clr_pkg.$classname" . 
+					name_const_to_camel ($enum->{NAME}) . "\"\n";
+				print $fd "\t\tjni-class=\"$jni_pkg/$classname\">\n\n";
 				
 				foreach my $val (sort numeric keys %{$enum->{PAIRS}}) {
 					my $pair = $enum->{PAIRS}{$val};
 					print $fd "\t\t<field value=\"$val\" jni-name=\"$pair->{CONST}{NAME}\" clr-name=\"" . 
 						name_const_to_camel ($pair->{NAME}) . "\" />\n";
 				}
-			}
 
-			if ($mapping_flag) {
 				print $fd "\t</mapping>\n";
 			}
 		}
