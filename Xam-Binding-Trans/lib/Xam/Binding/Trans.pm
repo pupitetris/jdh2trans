@@ -357,12 +357,64 @@ sub printMetadata {
 					print $fd "\t\t\t\t<!-- Method $meth->{PROTO} -->\n";
 
 					my $count = $known_meths{$methname . $num_params} ++;
-					foreach my $param (@{$meth->{PARAMS}}) {
-						print $fd "\t\t\t\t\t<attr path=\"/api/package[\@name='$pkgname']/" . 
+					my $meth_path = "/api/package[\@name='$pkgname']/" . 
 							"$class->{TYPE}\[\@name='$class->{NAME}']/" . 
-							"$meth->{TYPE}\[\@name='$methname' and count(parameter)=$num_params][$count]/" . 
+							"$meth->{TYPE}\[\@name='$methname' and count(parameter)=$num_params][$count]";
+					foreach my $param (@{$meth->{PARAMS}}) {
+						print $fd "\t\t\t\t\t<attr path=\"$meth_path/" . 
 							"parameter[position()=$param->{POS}]\" name=\"name\">$param->{NAME}</attr>\n";
 					}
+				}
+			}
+		}
+	}
+
+	my $found_events = 0;
+	foreach my $pkgname (@packages) {
+		my $pkg = $self->{PACKAGES}{$pkgname};
+
+		my $found_in_pkg = 0;
+		foreach my $class_key (sort keys %{$pkg->{CLASSES}}) {
+			my $class = $pkg->{CLASSES}{$class_key};
+			my %known_meths = ();
+
+			my $found_in_class = 0;
+			foreach my $h ($class->{METHODS}) {
+				foreach my $meth_key (sort keys %$h) {
+					my $meth = $h->{$meth_key};
+					my $methname = $meth->{NAME};
+					my $num_params = scalar @{$meth->{PARAMS}};
+					
+					next if $methname !~ /^on/;
+
+					my $evtname = $methname;
+					$evtname =~ s/^o/O/;
+
+					my $count = $known_meths{$methname . $num_params} ++;
+
+					if (!$found_events) {
+						$found_events = 1;
+						print $fd "\n\t<!-- Events -->\n";
+					}
+
+					if (!$found_in_pkg) {
+						$found_in_pkg = 1;
+						print $fd "\t\t<!-- Package $pkgname -->\n";
+					}
+
+					if (!$found_in_class) {
+						$found_in_class = 1;
+						print $fd "\t\t\t<!-- " . 
+							(($class->{TYPE} eq 'interface')? 'Interface': 'Class') .
+							" $class->{NAME} -->\n";
+					}
+
+					print $fd "\t\t\t\t<!-- Method $meth->{PROTO} -->\n";
+
+					my $meth_path = "/api/package[\@name='$pkgname']/" . 
+							"$class->{TYPE}\[\@name='$class->{NAME}']/" . 
+							"$meth->{TYPE}\[\@name='$methname' and count(parameter)=$num_params][$count]";
+					print $fd "\t\t\t\t\t<attr path=\"$meth_path\" name=\"eventName\">$evtname</attr>\n";
 				}
 			}
 		}
