@@ -385,7 +385,7 @@ sub printMetadata {
 					my $methname = $meth->{NAME};
 					my $num_params = scalar @{$meth->{PARAMS}};
 					
-					next if $methname !~ /^on/;
+					next if $methname !~ /^[oO]n./;
 
 					my $evtname = $methname;
 					$evtname =~ s/^o/O/;
