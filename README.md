@@ -21,7 +21,10 @@ Code sample:
     $trans->printEnumFieldMapping ('path/to/Transforms/EnumFields.xml'); # All found packages by default.
     $trans->printEnumMethodMapping (\*STDOUT, 'com.package.name', 'com.other.package'); # Two packages.
     $trans->printMetadata (\*STDOUT, qr/^com.package.name/); # com.package.name and all of its subpackages.
+    $trans->dump ('my_dump'); # Save the state of the object.
 
+    my $new_trans = Xam::Binding::Trans::load ('my_dump'); # It's faster to load than to re-parse.
+    $new_trans->printEnumFieldMapping ('path/to/Transforms/EnumFields-2.xml'); # Should print an identical file.
     ...
 
 # METHODS
@@ -29,6 +32,14 @@ Code sample:
 ## Xam::Binding::Trans->new ()
 
 Constructor. Creates a new mapper object.
+
+## Xam::Binding::Trans::load (dump\_file)
+
+Load the contents of the file located at dump\_file into a new object, restoring the saved parsing state.
+
+## $obj->dump (dump\_file)
+
+Dump the state of the object onto a file or file descriptor for later reuse, avoiding re-parsing.
 
 ## $obj->parse (dir, packages ...)
 

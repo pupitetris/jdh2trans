@@ -7,6 +7,8 @@ use warnings FATAL => 'all';
 use HTML::TreeBuilder 5 -weak; # Ensure weak references in use
 use Carp qw(croak carp);
 
+use Data::Dumper;
+
 =head1 NAME
 
 Xam::Binding::Trans - Generate Enum mappings for Xamarin Studio binding library projects.
@@ -34,7 +36,10 @@ Code sample:
     $trans->printEnumFieldMapping ('path/to/Transforms/EnumFields.xml'); # All found packages by default.
     $trans->printEnumMethodMapping (\*STDOUT, 'com.package.name', 'com.other.package'); # Two packages.
     $trans->printMetadata (\*STDOUT, qr/^com.package.name/); # com.package.name and all of its subpackages.
+    $trans->dump ('my_dump'); # Save the state of the object.
 
+    my $new_trans = Xam::Binding::Trans::load ('my_dump'); # It's faster to load than to re-parse.
+    $new_trans->printEnumFieldMapping ('path/to/Transforms/EnumFields-2.xml'); # Should print an identical file.
     ...
 
 =head1 METHODS
@@ -60,9 +65,49 @@ sub new {
 	return $self;
 }
 
+=head2 Xam::Binding::Trans::load (dump_file)
+
+Load the contents of the file located at dump_file into a new object, restoring the saved parsing state.
+
+=cut
+
+sub load {
+	my $file = shift;
+	my $self = do $file;
+	croak if !$self;
+	return $self;
+}
+
+=head2 $obj->dump (dump_file)
+
+Dump the state of the object onto a file or file descriptor for later reuse, avoiding re-parsing.
+
+=cut
+
+sub dump {
+	my $self = shift;
+	my $file = shift // \*STDOUT;
+
+	my $fd;
+	if (ref $file eq 'GLOB') {
+		$fd = $file;
+	} else {
+		open $fd, ">$file" || croak;
+	}
+
+	my $d = Data::Dumper->new ([$self], ['self']);
+	$d->Purity (1);
+	$d->Indent (1);
+	$d->Sortkeys (1);
+
+	print $fd $d->Dump ();
+	print $fd "\$self;\n";
+
+	close $fd;
+}
+
 sub DESTROY {
 	my $self = shift;
-	
 }
 
 =head2 $obj->parse (dir, packages ...)
