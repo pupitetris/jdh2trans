@@ -347,7 +347,9 @@ sub printMetadata {
 			my $class = $pkg->{CLASSES}{$class_key};
 			my %known_meths = ();
 
-			print $fd "\t\t\t<!-- Class $class->{NAME} -->\n";
+			print $fd "\t\t\t<!-- " . 
+				(($class->{TYPE} eq 'interface')? 'Interface': 'Class') .
+				" $class->{NAME} -->\n";
 
 			foreach my $h ($class->{CTORS}, $class->{METHODS}) {
 				foreach my $meth_key (sort keys %$h) {
@@ -1067,6 +1069,9 @@ sub _parse_proto {
 	# get visibility, return value and parameters
 	$str =~ /^(public|protected|) ?(static|) ?(?:([^ ]*) )?([^(]+)\(([^)]*)\)/;
 
+	# The matched string. Not using $& because it causes regexp engine to become slow.
+	my $proto_str = substr ($str, $-[0], $+[0] - $-[0]);
+
 	my ($visibility, $static, $ret, $name, $params) = ($1, $2, $3, $4, $5);
 
 	my $type;
@@ -1116,7 +1121,7 @@ sub _parse_proto {
 		STATIC => $static,
 		RETURN => $ret,
 		NAME => $name,
-		PROTO => $str,
+		PROTO => $proto_str,
 		PARAMS => \@params
 	};
 
