@@ -326,7 +326,7 @@ sub printMetadata {
 
 	print $fd "<metadata>\n";
 
-	print $fd "\n\t<!-- Fixing the namespaces -->\n";
+	print $fd "\n\t<!-- Namespace renaming -->\n";
 
 	foreach my $pkgname (@packages) {
 		my $pkg = $self->{PACKAGES}{$pkgname};
