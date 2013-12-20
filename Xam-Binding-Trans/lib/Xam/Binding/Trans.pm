@@ -278,7 +278,7 @@ sub printEnumMethodMapping {
 							"\t\t<method\n" .
 							"\t\t\tjni-name=\"$meth->{NAME}\"\n" .
 							"\t\t\tparameter=\"$param->{NAME}\"\n" .
-							"\t\t\tclr-enum-type=\"$clr_pkg.$classname" .
+							"\t\t\tclr-enum-type=\"$clr_pkg.$param->{TYPE}{CLASS}{NAME}" .
 							name_const_to_camel ($param->{TYPE}{NAME}) . "\" />\n\n";
 					}
 
@@ -287,7 +287,7 @@ sub printEnumMethodMapping {
 							"\t\t<method\n" .
 							"\t\t\tjni-name=\"$meth->{NAME}\"\n" .
 							"\t\t\tparameter=\"return\"\n" .
-							"\t\t\tclr-enum-type=\"$clr_pkg.$classname" .
+							"\t\t\tclr-enum-type=\"$clr_pkg.$meth->{RETURN}{CLASS}{NAME}" .
 							name_const_to_camel ($meth->{RETURN}{NAME}) . "\" />\n\n";
 					}
 				}
