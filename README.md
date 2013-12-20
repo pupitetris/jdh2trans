@@ -20,7 +20,7 @@ Code sample:
     $trans->parse ('dir/to/javadoc-html');
     $trans->printEnumFieldMapping ('path/to/Transforms/EnumFields.xml'); # All found packages by default.
     $trans->printEnumMethodMapping (\*STDOUT, 'com.package.name', 'com.other.package'); # Two packages.
-    $trans->printMetadata (\*STDOUT, qr/^com.package.name/); # com.package.name and all of its subpackages.
+    $trans->printMetadata (\*STDOUT, 'api.xml', qr/^com.package.name/); # com.package.name and all of its subpackages.
     $trans->dump ('my_dump'); # Save the state of the object.
 
     my $new_trans = Xam::Binding::Trans::load ('my_dump'); # It's faster to load than to re-parse.
@@ -57,10 +57,11 @@ will be processed if no packages are specified.
 Write an EnumMethods.xml mapping file for the given packages at the xml\_file location. All loaded packages
 will be processed if no packages are specified.
 
-## $obj->printMetadata (xml\_file, packages ...)
+## $obj->printMetadata (xml\_file, api\_file, packages ...)
 
 Write an Metadata.xml file for the given packages at the xml\_file location. All loaded packages
-will be processed if no packages are specified.
+will be processed if no packages are specified. api\_file is the api.xml file produced by Xamarin
+Studio after compiling the binding package; use the empty string if none is available.
 
 # CONFIGURATION
 

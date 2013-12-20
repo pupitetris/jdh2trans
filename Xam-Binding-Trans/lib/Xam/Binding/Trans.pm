@@ -5,9 +5,9 @@ use strict;
 use warnings FATAL => 'all';
 
 use HTML::TreeBuilder 5 -weak; # Ensure weak references in use
-use Carp qw(croak carp);
-
 use Data::Dumper;
+use XML::XPath;
+use Carp qw(croak carp);
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ Code sample:
     $trans->parse ('dir/to/javadoc-html');
     $trans->printEnumFieldMapping ('path/to/Transforms/EnumFields.xml'); # All found packages by default.
     $trans->printEnumMethodMapping (\*STDOUT, 'com.package.name', 'com.other.package'); # Two packages.
-    $trans->printMetadata (\*STDOUT, qr/^com.package.name/); # com.package.name and all of its subpackages.
+    $trans->printMetadata (\*STDOUT, 'api.xml', qr/^com.package.name/); # com.package.name and all of its subpackages.
     $trans->dump ('my_dump'); # Save the state of the object.
 
     my $new_trans = Xam::Binding::Trans::load ('my_dump'); # It's faster to load than to re-parse.
@@ -302,18 +302,32 @@ sub printEnumMethodMapping {
 	print $fd "\n</enum-method-mappings>\n";
 }
 
-=head2 $obj->printMetadata (xml_file, packages ...)
+=head2 $obj->printMetadata (xml_file, api_file, packages ...)
 
 Write an Metadata.xml file for the given packages at the xml_file location. All loaded packages
-will be processed if no packages are specified.
+will be processed if no packages are specified. api_file is the api.xml file produced by Xamarin
+Studio after compiling the binding package; use the empty string if none is available.
 
 =cut
+
+sub xpath_check_path {
+	my $xp = shift;
+	my $path = shift;
+	
+	return 1 if !$xp || $xp->exists ($path);
+	print STDERR "Metadata: Path $path matches no nodes.\n";
+	return 0;
+}
 
 sub printMetadata {
 	my $self = shift;
 	my $xml_file = shift;
+	my $api_file = shift;
 
 	my @packages = $self->_selectPrintPackages (@_);
+
+	my $xp;
+	$xp = XML::XPath->new (filename => $api_file) if $api_file;
 
 	my $fd;
 	if (ref $xml_file eq 'GLOB') {
@@ -332,7 +346,9 @@ sub printMetadata {
 		my $jni_pkg = pkgname_to_jni ($pkgname);
 		my $clr_pkg = pkgname_to_clr ($pkgname);
 
-		print $fd "\t\t<attr path=\"/api/package[\@name='$pkgname']\" name=\"managedName\">$clr_pkg</attr>\n";
+		my $path = "/api/package[\@name='$pkgname']";
+		xpath_check_path ($xp, $path);
+		print $fd "\t\t<attr path=\"$path\" name=\"managedName\">$clr_pkg</attr>\n";
 	}
 
 	print $fd "\n\t<!-- Parameter names -->\n";
@@ -366,8 +382,11 @@ sub printMetadata {
 							"$meth->{TYPE}\[" . (($meth->{TYPE} eq 'constructor')? '': "\@name='$methname' and ") .
 							"count(parameter)=$num_params][$count]";
 					foreach my $param (@{$meth->{PARAMS}}) {
-						print $fd "\t\t\t\t\t<attr path=\"$meth_path/parameter[position()=$param->{POS}]\"\n";
-						print $fd "\t\t\t\t\t\tname=\"name\">$param->{NAME}</attr>\n";
+						my $path = "$meth_path/parameter[position()=$param->{POS}]";
+						if (xpath_check_path ($xp, $path)) {
+							print $fd "\t\t\t\t\t<attr path=\"$path\"\n";
+							print $fd "\t\t\t\t\t\tname=\"name\">$param->{NAME}</attr>\n";
+						}
 					}
 				}
 			}
@@ -421,8 +440,10 @@ sub printMetadata {
 							"$class->{TYPE}\[\@name='$class->{NAME}']/" . 
 							"$meth->{TYPE}\[" . (($meth->{TYPE} eq 'constructor')? '': "\@name='$methname' and ") .
 							"count(parameter)=$num_params][$count]";
-					print $fd "\t\t\t\t\t<attr path=\"$meth_path\"\n";
-					print $fd "\t\t\t\t\t\tname=\"eventName\">$evtname</attr>\n";
+					if (xpath_check_path ($xp, $meth_path)) {
+						print $fd "\t\t\t\t\t<attr path=\"$meth_path\"\n";
+						print $fd "\t\t\t\t\t\tname=\"eventName\">$evtname</attr>\n";
+					}
 				}
 			}
 		}
@@ -477,16 +498,21 @@ sub printMetadata {
 							"count(parameter)=$num_params][$count]";
 					foreach my $param (@{$meth->{PARAMS}}) {
 						next if ref $param->{TYPE} ne 'ENUM';
-						print $fd "\t\t\t\t\t<attr path=\"$meth_path/parameter[position()=$param->{POS}]\"\n";
-						print $fd "\t\t\t\t\t\tname=\"enumType\">$clr_pkg.$param->{TYPE}{CLASS}{NAME}" .
-							name_const_to_camel ($param->{TYPE}{NAME}) . "</attr>\n";
+						my $path = "$meth_path/parameter[position()=$param->{POS}]";
+						if (xpath_check_path ($xp, $path)) {
+							print $fd "\t\t\t\t\t<attr path=\"$path\"\n";
+							print $fd "\t\t\t\t\t\tname=\"enumType\">$clr_pkg.$param->{TYPE}{CLASS}{NAME}" .
+								name_const_to_camel ($param->{TYPE}{NAME}) . "</attr>\n";
+						}
 					}
 
 					if (ref $meth->{RETURN} eq 'ENUM') {
 						# Fixme: this is just a supposition.
-						print $fd "\t\t\t\t\t<attr path=\"$meth_path\"\n";
-						print $fd "\t\t\t\t\t\tname=\"return\">$clr_pkg.$meth->{RETURN}{CLASS}{NAME}" . 
-							name_const_to_camel ($meth->{RETURN}{NAME}) . "</attr>\n";
+						if (xpath_check_path ($xp, $meth_path)) {
+							print $fd "\t\t\t\t\t<attr path=\"$meth_path\"\n";
+							print $fd "\t\t\t\t\t\tname=\"return\">$clr_pkg.$meth->{RETURN}{CLASS}{NAME}" . 
+								name_const_to_camel ($meth->{RETURN}{NAME}) . "</attr>\n";
+						}
 					}
 				}
 			}

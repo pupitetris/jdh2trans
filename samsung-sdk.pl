@@ -101,12 +101,12 @@ sub process_pkg {
 	my $dir = shift;
 
 	$dir = "$BASEDIR/$dir";
-	$trans->printEnumFieldMapping ($dir . '/EnumFields.xml', $pkg);
-	$trans->printEnumMethodMapping ($dir . '/EnumMethods.xml', $pkg);
-	$trans->printMetadata ($dir . '/Metadata.xml', $pkg);
+	$trans->printEnumFieldMapping ("$dir/Transforms/EnumFields.xml", $pkg);
+	$trans->printEnumMethodMapping ("$dir/Transforms/EnumMethods.xml", $pkg);
+	$trans->printMetadata ("$dir/Transforms/Metadata.xml", "$dir/obj/Debug/api.xml", $pkg);
 }
 
-process_pkg ('com.samsung.android.sdk', 'Samsung.Android.Sdk/Transforms');
-process_pkg (qr/^com.samsung.android.sdk.visualview/, 'Samsung.Android.Sdk.Visualview/Transforms');
+process_pkg ('com.samsung.android.sdk', 'Samsung.Android.Sdk');
+process_pkg (qr/^com.samsung.android.sdk.visualview/, 'Samsung.Android.Sdk.Visualview');
 
 1;
