@@ -339,7 +339,6 @@ sub printMetadata {
 	print $fd "<metadata>\n";
 
 	print $fd "\n\t<!-- Namespace renaming -->\n";
-
 	foreach my $pkgname (@packages) {
 		my $pkg = $self->{PACKAGES}{$pkgname};
 		croak "Package $pkgname not found" if !$pkg;
@@ -352,7 +351,6 @@ sub printMetadata {
 	}
 
 	print $fd "\n\t<!-- Parameter names -->\n";
-
 	foreach my $pkgname (@packages) {
 		print $fd "\t\t<!-- Package $pkgname -->\n";
 		my $pkg = $self->{PACKAGES}{$pkgname};
@@ -374,13 +372,15 @@ sub printMetadata {
 					my $num_params = scalar @{$meth->{PARAMS}};
 					next if $num_params == 0;
 
-					print $fd "\t\t\t\t<!-- Method $meth->{PROTO} -->\n";
-
 					my $count = ++$known_meths{$methname . $num_params};
 					my $meth_path = "/api/package[\@name='$pkgname']/" . 
 							"$class->{TYPE}\[\@name='$class->{NAME}']/" . 
 							"$meth->{TYPE}\[" . (($meth->{TYPE} eq 'constructor')? '': "\@name='$methname' and ") .
 							"count(parameter)=$num_params][$count]";
+
+					next if !xpath_check_path ($xp, $meth_path);
+
+					print $fd "\t\t\t\t<!-- Method $meth->{PROTO} -->\n";
 					foreach my $param (@{$meth->{PARAMS}}) {
 						my $path = "$meth_path/parameter[position()=$param->{POS}]";
 						if (xpath_check_path ($xp, $path)) {
@@ -417,6 +417,13 @@ sub printMetadata {
 
 					my $count = ++$known_meths{$methname . $num_params};
 
+					my $meth_path = "/api/package[\@name='$pkgname']/" . 
+							"$class->{TYPE}\[\@name='$class->{NAME}']/" . 
+							"$meth->{TYPE}\[" . (($meth->{TYPE} eq 'constructor')? '': "\@name='$methname' and ") .
+							"count(parameter)=$num_params][$count]";
+
+					next if !xpath_check_path ($xp, $meth_path);
+
 					if (!$found_events) {
 						$found_events = 1;
 						print $fd "\n\t<!-- Events -->\n";
@@ -436,14 +443,8 @@ sub printMetadata {
 
 					print $fd "\t\t\t\t<!-- Method $meth->{PROTO} -->\n";
 
-					my $meth_path = "/api/package[\@name='$pkgname']/" . 
-							"$class->{TYPE}\[\@name='$class->{NAME}']/" . 
-							"$meth->{TYPE}\[" . (($meth->{TYPE} eq 'constructor')? '': "\@name='$methname' and ") .
-							"count(parameter)=$num_params][$count]";
-					if (xpath_check_path ($xp, $meth_path)) {
-						print $fd "\t\t\t\t\t<attr path=\"$meth_path\"\n";
-						print $fd "\t\t\t\t\t\tname=\"eventName\">$evtname</attr>\n";
-					}
+					print $fd "\t\t\t\t\t<attr path=\"$meth_path\"\n";
+					print $fd "\t\t\t\t\t\tname=\"eventName\">$evtname</attr>\n";
 				}
 			}
 		}
@@ -490,12 +491,14 @@ sub printMetadata {
 							" $class->{NAME} -->\n";
 					}
 
-					print $fd "\t\t\t\t<!-- Method $meth->{PROTO} -->\n";
-
 					my $meth_path = "/api/package[\@name='$pkgname']/" . 
 							"$class->{TYPE}\[\@name='$class->{NAME}']/" . 
 							"$meth->{TYPE}\[" . (($meth->{TYPE} eq 'constructor')? '': "\@name='$methname' and ") .
 							"count(parameter)=$num_params][$count]";
+
+					next if !xpath_check_path ($xp, $meth_path);
+
+					print $fd "\t\t\t\t<!-- Method $meth->{PROTO} -->\n";
 					foreach my $param (@{$meth->{PARAMS}}) {
 						next if ref $param->{TYPE} ne 'ENUM';
 						my $path = "$meth_path/parameter[position()=$param->{POS}]";
