@@ -360,7 +360,7 @@ sub printMetadata {
 
 					print $fd "\t\t\t\t<!-- Method $meth->{PROTO} -->\n";
 
-					my $count = $known_meths{$methname . $num_params} ++;
+					my $count = ++$known_meths{$methname . $num_params};
 					my $meth_path = "/api/package[\@name='$pkgname']/" . 
 							"$class->{TYPE}\[\@name='$class->{NAME}']/" . 
 							"$meth->{TYPE}\[\@name='$methname' and count(parameter)=$num_params][$count]";
@@ -395,7 +395,7 @@ sub printMetadata {
 					my $evtname = $methname;
 					$evtname =~ s/^o/O/;
 
-					my $count = $known_meths{$methname . $num_params} ++;
+					my $count = ++$known_meths{$methname . $num_params};
 
 					if (!$found_events) {
 						$found_events = 1;
@@ -448,7 +448,7 @@ sub printMetadata {
 
 					my $num_params = scalar @{$meth->{PARAMS}};
 
-					my $count = $known_meths{$methname . $num_params} ++;
+					my $count = ++$known_meths{$methname . $num_params};
 
 					if (!$found_overloads) {
 						$found_overloads = 1;
@@ -1220,7 +1220,7 @@ sub _parse_proto {
 		my $param = { 
 			TYPE => $param_type, 
 			NAME => $param_name,
-			POS => $param_no
+			POS => $param_no + 1
 		};
 
 		push @params, $param;
