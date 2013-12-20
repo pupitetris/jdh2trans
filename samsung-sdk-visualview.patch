@@ -1,0 +1,380 @@
+--- Samsung.Android.Sdk.Visualview/Transforms/EnumFields.xml	2013-12-20 11:19:46.000000000 -0600
++++ Samsung.Android.Sdk.Visualview/Transforms/x/EnumFields.xml	2013-12-20 11:19:31.000000000 -0600
+@@ -194,4 +194,362 @@
+ 		<field value="45" jni-name="TRANSITION_SPACE" clr-name="Space" />
+ 	</mapping>
+ 
++	<!-- Package com.sec.android.sviengine -->
++
++  <mapping 
++    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideManagerAnimationType" 
++    jni-class="com/sec/android/sviengine/slide/SASlideManager">
++
++    <field jni-name="ALL_ANIMATION" clr-name="AllAnimation" value="2" />
++    <field jni-name="IMPLICIT_ANIMATION_TYPE_ADD" clr-name="Add" value="3" />
++    <field jni-name="IMPLICT_ANIMATION_TYPE_ACTIVITY_CHANGE" clr-name="ActivityChange" value="6" />
++    <field jni-name="IMPLICT_ANIMATION_TYPE_MOVETO_TOP" clr-name="MovetoTop" value="4" />
++    <field jni-name="IMPLICT_ANIMATION_TYPE_OPACITY" clr-name="Opacity" value="8" />
++    <field jni-name="IMPLICT_ANIMATION_TYPE_RITH_TO_LEFT" clr-name="RithToLeft" value="9" />
++    <field jni-name="IMPLICT_ANIMATION_TYPE_ROTATION" clr-name="Rotation" value="7" />
++    <field jni-name="IMPLICT_ANIMATION_TYPE_SET_REGION" clr-name="SetRegion" value="5" />
++    <field jni-name="NO_ANIMATION" clr-name="NoAnimation" value="0" />
++    <field jni-name="SOME_ANIMATION" clr-name="SomeAnimation" value="1" />
++
++
++  </mapping>
++
++  <mapping 
++    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideBlendType" 
++    jni-interface="com/sec/android/sviengine/slide/SASlide$BlendType">
++
++    <field jni-name="BLEND_ADD" clr-name="Add" value="1" />
++    <field jni-name="BLEND_MULTIPLY" clr-name="Multiply" value="0" />
++    <field jni-name="BLEND_ONE" clr-name="One" value="2" />
++
++  </mapping>
++
++  <mapping 
++    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideLightType" 
++    jni-interface="com/sec/android/sviengine/slide/SASlide$LightType">
++
++    <field jni-name="LINEAR_LIGHT" clr-name="LinearLight" value="2" />
++    <field jni-name="NO_LIGHT" clr-name="NoLight" value="0" />
++    <field jni-name="SPOT_LIGHT" clr-name="SpotLight" value="1" />
++
++  </mapping>
++
++  <mapping 
++    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideImageScaleType" 
++    jni-interface="com/sec/android/sviengine/slide/SASlide$ImageScaleType">
++
++    <field jni-name="CENTER" clr-name="Center" value="5" />
++    <field jni-name="CENTER_CROP" clr-name="CenterCrop" value="6" />
++    <field jni-name="CENTER_INSIDE" clr-name="CenterInside" value="7" />
++    <field jni-name="FIT_CENTER" clr-name="FitCenter" value="3" />
++    <field jni-name="FIT_END" clr-name="FitEnd" value="4" />
++    <field jni-name="FIT_START" clr-name="FitStart" value="2" />
++    <field jni-name="FIT_XY" clr-name="FitXy" value="1" />
++    <field jni-name="MATRIX" clr-name="Matrix" value="0" />
++
++  </mapping>
++
++  <mapping 
++    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideFilterType" 
++    jni-interface="com/sec/android/sviengine/slide/SASlide$FilterType">
++
++    <field jni-name="FILTER_CARTOON" clr-name="Cartoon" value="4" />
++    <field jni-name="FILTER_MONOTONE" clr-name="Monotone" value="6" />
++    <field jni-name="FILTER_NONE" clr-name="None" value="0" />
++    <field jni-name="FILTER_OILPAINT" clr-name="Oilpaint" value="2" />
++    <field jni-name="FILTER_RADIAL" clr-name="Radial" value="5" />
++    <field jni-name="FILTER_SKETCH" clr-name="Sketch" value="1" />
++    <field jni-name="FILTER_SMOKE" clr-name="Smoke" value="7" />
++    <field jni-name="FILTER_WATERCOLOR" clr-name="Watercolor" value="3" />
++
++  </mapping>
++
++  <mapping 
++    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideImageFormat" 
++    jni-interface="com/sec/android/sviengine/slide/SASlide$ImageFormat">
++
++    <field jni-name="NONE" clr-name="None" value="0" />
++    <field jni-name="RGBA_8888" clr-name="Rgba8888" value="2" />
++    <field jni-name="RGB_565" clr-name="Rgb565" value="1" />
++
++  </mapping>
++
++  <mapping 
++    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideRTEffectType" 
++    jni-interface="com/sec/android/sviengine/slide/SASlide$RTEffectType">
++
++    <field jni-name="RT_DIRECTIONBLUR" clr-name="Directionblur" value="9" />
++    <field jni-name="RT_DREAMVISION" clr-name="Dreamvision" value="3" />
++    <field jni-name="RT_GLASSTILE" clr-name="Glasstile" value="7" />
++    <field jni-name="RT_MAGNIFY" clr-name="Magnify" value="6" />
++    <field jni-name="RT_NONE" clr-name="None" value="0" />
++    <field jni-name="RT_PAPERFOLD" clr-name="Paperfold" value="5" />
++    <field jni-name="RT_PULSE" clr-name="Pulse" value="2" />
++    <field jni-name="RT_RIPPLE" clr-name="Ripple" value="1" />
++    <field jni-name="RT_WIZZLE" clr-name="Wizzle" value="4" />
++    <field jni-name="RT_ZOOMBLUR" clr-name="Zoomblur" value="8" />
++
++  </mapping>
++
++  <mapping 
++    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideDeformDirection" 
++    jni-interface="com/sec/android/sviengine/slide/SASlide$SlideDeformDirection">
++
++    <field jni-name="DEFORM_HORIZONTAL" clr-name="Horizontal" value="0" />
++    <field jni-name="DEFORM_HORIZONTAL_REVERSE" clr-name="HorizontalReverse" value="2" />
++    <field jni-name="DEFORM_VERTICAL" clr-name="Vertical" value="1" />
++    <field jni-name="DEFORM_VERTICAL_REVERSE" clr-name="VerticalReverse" value="3" />
++
++  </mapping>
++
++  <mapping 
++    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideDeformType" 
++    jni-interface="com/sec/android/sviengine/slide/SASlide$SlideDeformType">
++
++    <field jni-name="DEFORM_BRICK" clr-name="Brick" value="9" />
++    <field jni-name="DEFORM_CONECURVE" clr-name="Conecurve" value="12" />
++    <field jni-name="DEFORM_DOME" clr-name="Dome" value="10" />
++    <field jni-name="DEFORM_DRUM" clr-name="Drum" value="11" />
++    <field jni-name="DEFORM_EXPLODE" clr-name="Explode" value="3" />
++    <field jni-name="DEFORM_MATH_BOOK" clr-name="MathBook" value="7" />
++    <field jni-name="DEFORM_MATH_PAGE" clr-name="MathPage" value="6" />
++    <field jni-name="DEFORM_NONE" clr-name="None" value="0" />
++    <field jni-name="DEFORM_PAGE" clr-name="Page" value="1" />
++    <field jni-name="DEFORM_PANNEL" clr-name="Pannel" value="8" />
++    <field jni-name="DEFORM_PATH" clr-name="Path" value="13" />
++    <field jni-name="DEFORM_PHYS_BOOK" clr-name="PhysBook" value="5" />
++    <field jni-name="DEFORM_PHYS_PAGE" clr-name="PhysPage" value="4" />
++    <field jni-name="DEFORM_SISO" clr-name="Siso" value="14" />
++    <field jni-name="DEFORM_TWIST" clr-name="Twist" value="2" />
++
++  </mapping>
++
++  <mapping 
++    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideSwipeType" 
++    jni-interface="com/sec/android/sviengine/slide/SASlide$SlideSwipeType">
++
++    <field jni-name="SWIPE_LINEAR" clr-name="Linear" value="1" />
++    <field jni-name="SWIPE_NONE" clr-name="None" value="0" />
++    <field jni-name="SWIPE_RADIAL" clr-name="Radial" value="2" />
++
++  </mapping>
++
++  <mapping 
++    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideType" 
++    jni-interface="com/sec/android/sviengine/slide/SASlide$SlideType">
++
++    <field jni-name="BASE_SLIDE" clr-name="BaseSlide" value="0" />
++    <field jni-name="IMAGE_SLIDE" clr-name="ImageSlide" value="1" />
++    <field jni-name="SCROLL_SLIDE" clr-name="ScrollSlide" value="3" />
++    <field jni-name="TEXT_SLIDE" clr-name="TextSlide" value="2" />
++
++  </mapping>
++
++  <mapping 
++    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideZOrderType" 
++    jni-interface="com/sec/android/sviengine/slide/SASlide$SlideZOrderType">
++
++    <field jni-name="BOTTOM" clr-name="Bottom" value="0" />
++    <field jni-name="NORMAL" clr-name="Normal" value="1" />
++    <field jni-name="TOPMOST" clr-name="Topmost" value="2" />
++
++  </mapping>
++
++  <mapping 
++    clr-enum-type="Sec.Android.Sviengine.Animation.SAAnimationInterpolatorType" 
++    jni-interface="com/sec/android/sviengine/animation/SAAnimation$InterpolatorType">
++
++    <field jni-name="ACCELERATE" clr-name="Accelerate" value="1" />
++    <field jni-name="ACCELERATE_DECELERATE" clr-name="AccelerateDecelerate" value="3" />
++    <field jni-name="ANTICIPATE" clr-name="Anticipate" value="4" />
++    <field jni-name="ANTICIPATE_OVERSHOOT" clr-name="AnticipateOvershoot" value="5" />
++    <field jni-name="BACKEASEIN" clr-name="Backeasein" value="9" />
++    <field jni-name="BACKEASEINOUT" clr-name="Backeaseinout" value="10" />
++    <field jni-name="BACKEASEOUT" clr-name="Backeaseout" value="11" />
++    <field jni-name="BOUNCE" clr-name="Bounce" value="6" />
++    <field jni-name="BOUNCEEASEIN" clr-name="Bounceeasein" value="12" />
++    <field jni-name="BOUNCEEASEINOUT" clr-name="Bounceeaseinout" value="13" />
++    <field jni-name="BOUNCEEASEOUT" clr-name="Bounceeaseout" value="14" />
++    <field jni-name="CIRCULAREASEIN" clr-name="Circulareasein" value="15" />
++    <field jni-name="CIRCULAREASEINOUT" clr-name="Circulareaseinout" value="16" />
++    <field jni-name="CIRCULAREASEOUT" clr-name="Circulareaseout" value="17" />
++    <field jni-name="CUBICEASEIN" clr-name="Cubiceasein" value="18" />
++    <field jni-name="CUBICEASEINOUT" clr-name="Cubiceaseinout" value="19" />
++    <field jni-name="CUBICEASEOUT" clr-name="Cubiceaseout" value="20" />
++    <field jni-name="CYCLE" clr-name="Cycle" value="8" />
++    <field jni-name="DECELERATE" clr-name="Decelerate" value="2" />
++    <field jni-name="ELASTICEASEIN" clr-name="Elasticeasein" value="21" />
++    <field jni-name="ELASTICEASEINOUT" clr-name="Elasticeaseinout" value="22" />
++    <field jni-name="ELASTICEASEOUT" clr-name="Elasticeaseout" value="23" />
++    <field jni-name="EXPONENTIALEASEIN" clr-name="Exponentialeasein" value="24" />
++    <field jni-name="EXPONENTIALEASEINOUT" clr-name="Exponentialeaseinout" value="25" />
++    <field jni-name="EXPONENTIALEASEOUT" clr-name="Exponentialeaseout" value="26" />
++    <field jni-name="LINEAR" clr-name="Linear" value="0" />
++    <field jni-name="OVERSHOOT" clr-name="Overshoot" value="7" />
++    <field jni-name="QUADEASEIN" clr-name="Quadeasein" value="27" />
++    <field jni-name="QUADEASEINOUT" clr-name="Quadeaseinout" value="28" />
++    <field jni-name="QUADEASEOUT" clr-name="Quadeaseout" value="29" />
++    <field jni-name="QUARTEASEIN" clr-name="Quarteasein" value="30" />
++    <field jni-name="QUARTEASEINOUT" clr-name="Quarteaseinout" value="31" />
++    <field jni-name="QUARTEASEOUT" clr-name="Quarteaseout" value="32" />
++    <field jni-name="QUINTEASEIN" clr-name="Quinteasein" value="33" />
++    <field jni-name="QUINTEASEINOUT" clr-name="Quinteaseinout" value="34" />
++    <field jni-name="QUINTEASEOUT" clr-name="Quinteaseout" value="35" />
++    <field jni-name="SINEEASEIN" clr-name="Sineeasein" value="36" />
++    <field jni-name="SINEEASEINOUT" clr-name="Sineeaseinout" value="37" />
++    <field jni-name="SINEEASEOUT" clr-name="Sineeaseout" value="38" />
++    <field jni-name="STRONGEASEIN" clr-name="Strongeasein" value="39" />
++    <field jni-name="STRONGEASEINOUT" clr-name="Strongeaseinout" value="40" />
++    <field jni-name="STRONGEASEOUT" clr-name="Strongeaseout" value="41" />
++
++  </mapping>
++
++  <mapping 
++    clr-enum-type="Sec.Android.Sviengine.Animation.SAAnimationClass" 
++    jni-interface="com/sec/android/sviengine/animation/SAAnimation$SAAnimationClass">
++
++    <field jni-name="ANIMATION_SET" clr-name="AnimationSet" value="5" />
++    <field jni-name="BASIC" clr-name="Basic" value="1" />
++    <field jni-name="KEYFRAME" clr-name="Keyframe" value="2" />
++    <field jni-name="NONE" clr-name="None" value="0" />
++    <field jni-name="SPRITE" clr-name="Sprite" value="4" />
++    <field jni-name="TRANSITION" clr-name="Transition" value="3" />
++
++  </mapping>
++
++  <mapping 
++    clr-enum-type="Sec.Android.Sviengine.Animation.SAPropertyAnimationType" 
++    jni-interface="com/sec/android/sviengine/animation/SAPropertyAnimation$PropertyAnimationType">
++
++    <field jni-name="BACKFACE_TEXTURE_REGION" clr-name="BackfaceTextureRegion" value="18" />
++    <field jni-name="BG_COLOR" clr-name="BgColor" value="8" />
++    <field jni-name="BORDER_COLOR" clr-name="BorderColor" value="12" />
++    <field jni-name="BORDER_WIDTH" clr-name="BorderWidth" value="11" />
++    <field jni-name="BOUND" clr-name="Bound" value="2" />
++    <field jni-name="CORNER_RADIUS" clr-name="CornerRadius" value="10" />
++    <field jni-name="DEFORM_RATIO" clr-name="DeformRatio" value="28" />
++    <field jni-name="LIGHT_ANGLE" clr-name="LightAngle" value="22" />
++    <field jni-name="LIGHT_COLOR" clr-name="LightColor" value="20" />
++    <field jni-name="LIGHT_DIRECTION" clr-name="LightDirection" value="33" />
++    <field jni-name="LIGHT_OFFSET" clr-name="LightOffset" value="23" />
++    <field jni-name="LIGHT_OPACITY" clr-name="LightOpacity" value="21" />
++    <field jni-name="LIGHT_POWER" clr-name="LightPower" value="24" />
++    <field jni-name="LIGHT_RADIUS" clr-name="LightRadius" value="19" />
++    <field jni-name="MODEL_POSITION" clr-name="ModelPosition" value="30" />
++    <field jni-name="MODEL_ROTATION" clr-name="ModelRotation" value="31" />
++    <field jni-name="MODEL_SCALE" clr-name="ModelScale" value="32" />
++    <field jni-name="NONE" clr-name="None" value="0" />
++    <field jni-name="OPACITY" clr-name="Opacity" value="9" />
++    <field jni-name="PIVOT_POINT" clr-name="PivotPoint" value="4" />
++    <field jni-name="POSITION" clr-name="Position" value="3" />
++    <field jni-name="PROPERTY_ANI_COUNT" clr-name="PropertyAniCount" value="35" />
++    <field jni-name="REGION" clr-name="Region" value="1" />
++    <field jni-name="ROTATION" clr-name="Rotation" value="6" />
++    <field jni-name="ROTATION_FROM" clr-name="RotationFrom" value="26" />
++    <field jni-name="RTE_RATIO" clr-name="RteRatio" value="29" />
++    <field jni-name="SCALE" clr-name="Scale" value="7" />
++    <field jni-name="SCALETOFIT_REGION" clr-name="ScaletofitRegion" value="25" />
++    <field jni-name="SHADOW_COLOR" clr-name="ShadowColor" value="14" />
++    <field jni-name="SHADOW_OFFSET" clr-name="ShadowOffset" value="16" />
++    <field jni-name="SHADOW_OPACITY" clr-name="ShadowOpacity" value="15" />
++    <field jni-name="SHADOW_RADIUS" clr-name="ShadowRadius" value="13" />
++    <field jni-name="SWIPE_RATIO" clr-name="SwipeRatio" value="27" />
++    <field jni-name="TEXTURE_REGION" clr-name="TextureRegion" value="17" />
++    <field jni-name="VIEW_DIRECTION" clr-name="ViewDirection" value="34" />
++    <field jni-name="ZPOSITION" clr-name="Zposition" value="5" />
++
++  </mapping>
++
++  <mapping 
++    clr-enum-type="Sec.Android.Sviengine.Animation.SATransitionAnimationDirection" 
++    jni-interface="com/sec/android/sviengine/animation/SATransitionAnimation$DirectionType">
++
++    <field jni-name="DOWN" clr-name="Down" value="3" />
++    <field jni-name="LEFT" clr-name="Left" value="0" />
++    <field jni-name="RIGHT" clr-name="Right" value="1" />
++    <field jni-name="UP" clr-name="Up" value="2" />
++
++  </mapping>
++
++  <mapping 
++    clr-enum-type="Sec.Android.Sviengine.Animation.SATransitionAnimationTransition" 
++    jni-interface="com/sec/android/sviengine/animation/SATransitionAnimation$TransitionType">
++
++    <field jni-name="BLIND" clr-name="Blind" value="0" />
++    <field jni-name="BOX" clr-name="Box" value="22" />
++    <field jni-name="BREAK" clr-name="Break" value="1" />
++    <field jni-name="BRICK_CUBE" clr-name="BrickCube" value="46" />
++    <field jni-name="CENTER_BLIND" clr-name="CenterBlind" value="38" />
++    <field jni-name="CHECKER_BOARD" clr-name="CheckerBoard" value="23" />
++    <field jni-name="COVER" clr-name="Cover" value="24" />
++    <field jni-name="CUBE_2PIECES" clr-name="Cube2pieces" value="47" />
++    <field jni-name="CUBE_4PIECES" clr-name="Cube4pieces" value="48" />
++    <field jni-name="CURTAIN" clr-name="Curtain" value="2" />
++    <field jni-name="DOMINOFLIP" clr-name="Dominoflip" value="3" />
++    <field jni-name="EXPLOID" clr-name="Exploid" value="17" />
++    <field jni-name="FADE_THROUGH_COLOR" clr-name="FadeThroughColor" value="39" />
++    <field jni-name="FALL" clr-name="Fall" value="40" />
++    <field jni-name="FERRIS_WHEEL" clr-name="FerrisWheel" value="25" />
++    <field jni-name="FLASH" clr-name="Flash" value="26" />
++    <field jni-name="FLIP" clr-name="Flip" value="18" />
++    <field jni-name="FLIP_2" clr-name="Flip2" value="27" />
++    <field jni-name="FLY_THROUGH" clr-name="FlyThrough" value="28" />
++    <field jni-name="FOLDING_SCREEN" clr-name="FoldingScreen" value="49" />
++    <field jni-name="GALLERY" clr-name="Gallery" value="29" />
++    <field jni-name="GALLERY_2" clr-name="Gallery2" value="50" />
++    <field jni-name="HONEYCOMB" clr-name="Honeycomb" value="30" />
++    <field jni-name="MOVE_IN" clr-name="MoveIn" value="41" />
++    <field jni-name="ONE_PAGE_TURN" clr-name="OnePageTurn" value="4" />
++    <field jni-name="REVEAL" clr-name="Reveal" value="31" />
++    <field jni-name="REVOLVING_DOOR" clr-name="RevolvingDoor" value="42" />
++    <field jni-name="ROTATE" clr-name="Rotate" value="11" />
++    <field jni-name="ROTATE_CUBE" clr-name="RotateCube" value="12" />
++    <field jni-name="SCALE" clr-name="Scale" value="19" />
++    <field jni-name="SHAPE" clr-name="Shape" value="32" />
++    <field jni-name="SHRED" clr-name="Shred" value="33" />
++    <field jni-name="SIDEWINDOW" clr-name="Sidewindow" value="13" />
++    <field jni-name="SLIDE" clr-name="Slide" value="14" />
++    <field jni-name="SMOOTH" clr-name="Smooth" value="20" />
++    <field jni-name="SNAIL" clr-name="Snail" value="5" />
++    <field jni-name="SPACE" clr-name="Space" value="51" />
++    <field jni-name="SPLIT" clr-name="Split" value="34" />
++    <field jni-name="SWAP" clr-name="Swap" value="43" />
++    <field jni-name="SWITCH" clr-name="Switch" value="35" />
++    <field jni-name="SWOOSH" clr-name="Swoosh" value="44" />
++    <field jni-name="THROUGH" clr-name="Through" value="6" />
++    <field jni-name="TORNADO" clr-name="Tornado" value="7" />
++    <field jni-name="TUMBLE" clr-name="Tumble" value="8" />
++    <field jni-name="TWIRL" clr-name="Twirl" value="45" />
++    <field jni-name="TWIST" clr-name="Twist" value="21" />
++    <field jni-name="TWO_PAGE_TURN" clr-name="TwoPageTurn" value="9" />
++    <field jni-name="UNCOVER" clr-name="Uncover" value="36" />
++    <field jni-name="WAVE" clr-name="Wave" value="15" />
++    <field jni-name="WIPE" clr-name="Wipe" value="37" />
++    <field jni-name="WIZZLE" clr-name="Wizzle" value="10" />
++    <field jni-name="ZOOM_IN" clr-name="ZoomIn" value="16" />
++
++  </mapping>
++
++  <mapping 
++    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideManagerSlidePriority" 
++    jni-interface="com/sec/android/sviengine/slide/SASlideManager$SlidePriority">
++
++    <field jni-name="SUI_PRIORITY_CONTEXTMENU" clr-name="Contextmenu" value="4" />
++    <field jni-name="SUI_PRIORITY_NORMAL" clr-name="Normal" value="1" />
++    <field jni-name="SUI_PRIORITY_OVERLAYBAR" clr-name="Overlaybar" value="5" />
++    <field jni-name="SUI_PRIORITY_POPUP" clr-name="Popup" value="3" />
++    <field jni-name="SUI_PRIORITY_TICKER" clr-name="Ticker" value="2" />
++    <field jni-name="SUI_PRIORITY_TOOLTIP" clr-name="Tooltip" value="6" />
++
++  </mapping>
++
++  <mapping 
++    clr-enum-type="Sec.Android.Sviengine.Basetype.SAImageCompressTextureType" 
++    jni-interface="com/sec/android/sviengine/basetype/SAImage$CompressTextureType">
++
++    <field jni-name="COMPRESS_ATC" clr-name="Atc" value="0" />
++    <field jni-name="COMPRESS_PVR" clr-name="Pvr" value="1" />
++
++  </mapping>
++
+ </enum-field-mappings>
+--- Samsung.Android.Sdk.Visualview/Transforms/Metadata.xml	2013-12-20 11:19:48.000000000 -0600
++++ Samsung.Android.Sdk.Visualview/Transforms/x/Metadata.xml	2013-12-20 11:19:31.000000000 -0600
+@@ -3,6 +3,12 @@
+ 	<!-- Namespace renaming -->
+ 		<attr path="/api/package[@name='com.samsung.android.sdk.visualview']" name="managedName">Samsung.Android.Sdk.Visualview</attr>
+ 		<attr path="/api/package[@name='com.samsung.android.sdk.visualview.animation']" name="managedName">Samsung.Android.Sdk.Visualview.Animation</attr>
++		<attr path="/api/package[@name='com.sec.android.sviengine']" name="managedName">Sec.Android.Sviengine</attr>
++		<attr path="/api/package[@name='com.sec.android.sviengine.animation']" name="managedName">Sec.Android.Sviengine.Animation</attr>
++		<attr path="/api/package[@name='com.sec.android.sviengine.basetype']" name="managedName">Sec.Android.Sviengine.Basetype</attr>
++		<attr path="/api/package[@name='com.sec.android.sviengine.debug']" name="managedName">Sec.Android.Sviengine.Debug</attr>   
++		<attr path="/api/package[@name='com.sec.android.sviengine.glsurface']" name="managedName">Sec.Android.Sviengine.GlSurface</attr>
++		<attr path="/api/package[@name='com.sec.android.sviengine.slide']" name="managedName">Sec.Android.Sviengine.Slide</attr>
+ 
+ 	<!-- Parameter names -->
+ 		<!-- Package com.samsung.android.sdk.visualview -->

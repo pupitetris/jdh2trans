@@ -107,6 +107,8 @@ sub process_pkg {
 }
 
 process_pkg ('com.samsung.android.sdk', 'Samsung.Android.Sdk');
+
 process_pkg (qr/^com.samsung.android.sdk.visualview/, 'Samsung.Android.Sdk.Visualview');
+system ("patch -d $BASEDIR -p0 < samsung-sdk-visualview.patch");
 
 1;
