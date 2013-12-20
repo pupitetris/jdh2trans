@@ -96,16 +96,17 @@ my $trans = Xam::Binding::Trans::load ($dumpfile);
 my $dir;
 my $pkg;
 
-$pkg = 'com.samsung.android.sdk';
-$dir = $BASEDIR . '/Samsung.Android.Sdk/Transforms';
-$trans->printEnumFieldMapping ($dir . '/EnumFields.xml', $pkg);
-$trans->printEnumMethodMapping ($dir . '/EnumMethods.xml', $pkg);
-$trans->printMetadata ($dir . '/Metadata.xml', $pkg);
+sub process_pkg {
+	my $pkg = shift;
+	my $dir = shift;
 
-$pkg = qr/^com.samsung.android.sdk.visualview/;
-$dir = $BASEDIR . '/Samsung.Android.Sdk.Visualview/Transforms';
-$trans->printEnumFieldMapping ($dir . '/EnumFields.xml', $pkg);
-$trans->printEnumMethodMapping ($dir . '/EnumMethods.xml', $pkg);
-$trans->printMetadata ($dir . '/Metadata.xml', $pkg);
+	$dir = "$BASEDIR/$dir";
+	$trans->printEnumFieldMapping ($dir . '/EnumFields.xml', $pkg);
+	$trans->printEnumMethodMapping ($dir . '/EnumMethods.xml', $pkg);
+	$trans->printMetadata ($dir . '/Metadata.xml', $pkg);
+}
+
+process_pkg ('com.samsung.android.sdk', 'Samsung.Android.Sdk/Transforms');
+process_pkg (qr/^com.samsung.android.sdk.visualview/, 'Samsung.Android.Sdk.Visualview/Transforms');
 
 1;
