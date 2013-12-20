@@ -207,7 +207,7 @@ sub printEnumFieldMapping {
 				print $fd "\n\t<mapping\n";
 				print $fd "\t\tclr-enum-type=\"$clr_pkg.$classname" . 
 					name_const_to_camel ($enum->{NAME}) . "\"\n";
-				print $fd "\t\tjni-class=\"$jni_pkg/$classname\">\n\n";
+				print $fd "\t\tjni-$class->{TYPE}=\"$jni_pkg/$classname\">\n\n";
 				
 				foreach my $val (sort numeric keys %{$enum->{PAIRS}}) {
 					my $pair = $enum->{PAIRS}{$val};
@@ -261,14 +261,17 @@ sub printEnumMethodMapping {
 			foreach my $h ($class->{CTORS}, $class->{METHODS}) {
 				foreach my $meth_key (sort keys %$h) {
 					next if $meth_key !~ /enum:/;
+					my $meth = $h->{$meth_key};
+
+					# Method name is ambiguous and we have to do the transform in Metadata.xml.
+					next if $class->{HIST}{$meth->{NAME}} > 1;
 
 					if (!$mapping_flag) {
 						$mapping_flag = 1;
 						print $fd "\n\t<mapping\n";
-						print $fd "\t\tjni-class=\"$jni_pkg/$classname\">\n\n";
+						print $fd "\t\tjni-$class->{TYPE}=\"$jni_pkg/$classname\">\n\n";
 					}
 
-					my $meth = $h->{$meth_key};
 					foreach my $param (@{$meth->{PARAMS}}) {
 						next if ref $param->{TYPE} ne 'ENUM';
 						print $fd 
@@ -278,6 +281,7 @@ sub printEnumMethodMapping {
 							"\t\t\tclr-enum-type=\"$clr_pkg.$classname" .
 							name_const_to_camel ($param->{TYPE}{NAME}) . "\" />\n\n";
 					}
+
 					if (ref $meth->{RETURN} eq 'ENUM') {
 						print $fd 
 							"\t\t<method\n" .
@@ -361,14 +365,15 @@ sub printMetadata {
 							"$class->{TYPE}\[\@name='$class->{NAME}']/" . 
 							"$meth->{TYPE}\[\@name='$methname' and count(parameter)=$num_params][$count]";
 					foreach my $param (@{$meth->{PARAMS}}) {
-						print $fd "\t\t\t\t\t<attr path=\"$meth_path/" . 
-							"parameter[position()=$param->{POS}]\" name=\"name\">$param->{NAME}</attr>\n";
+						print $fd "\t\t\t\t\t<attr path=\"$meth_path/parameter[position()=$param->{POS}]\"\n";
+						print $fd "\t\t\t\t\t\tname=\"name\">$param->{NAME}</attr>\n";
 					}
 				}
 			}
 		}
 	}
 
+	# Event handlers
 	my $found_events = 0;
 	foreach my $pkgname (@packages) {
 		my $pkg = $self->{PACKAGES}{$pkgname};
@@ -414,7 +419,72 @@ sub printMetadata {
 					my $meth_path = "/api/package[\@name='$pkgname']/" . 
 							"$class->{TYPE}\[\@name='$class->{NAME}']/" . 
 							"$meth->{TYPE}\[\@name='$methname' and count(parameter)=$num_params][$count]";
-					print $fd "\t\t\t\t\t<attr path=\"$meth_path\" name=\"eventName\">$evtname</attr>\n";
+					print $fd "\t\t\t\t\t<attr path=\"$meth_path\"\n";
+					print $fd "\t\t\t\t\t\tname=\"eventName\">$evtname</attr>\n";
+				}
+			}
+		}
+	}
+
+	# Workaround for EnumMethods not supporting overloads
+	my $found_overloads = 0;
+	foreach my $pkgname (@packages) {
+		my $pkg = $self->{PACKAGES}{$pkgname};
+		my $clr_pkg = pkgname_to_clr ($pkgname);
+
+		my $found_in_pkg = 0;
+		foreach my $class_key (sort keys %{$pkg->{CLASSES}}) {
+			my $class = $pkg->{CLASSES}{$class_key};
+			my %known_meths = ();
+
+			my $found_in_class = 0;
+			foreach my $h ($class->{CTORS}, $class->{METHODS}) {
+				foreach my $meth_key (sort keys %$h) {
+					next if $meth_key !~ /enum:/; # We are looking for methods that use enums.
+					my $meth = $h->{$meth_key};
+					my $methname = $meth->{NAME};
+					
+					next if $class->{HIST}{$methname} < 2; # Method has to be an overload.
+
+					my $num_params = scalar @{$meth->{PARAMS}};
+
+					my $count = $known_meths{$methname . $num_params} ++;
+
+					if (!$found_overloads) {
+						$found_overloads = 1;
+						print $fd "\n\t<!-- Workarounds for EnumMethods not supporting overloads -->\n";
+					}
+
+					if (!$found_in_pkg) {
+						$found_in_pkg = 1;
+						print $fd "\t\t<!-- Package $pkgname -->\n";
+					}
+
+					if (!$found_in_class) {
+						$found_in_class = 1;
+						print $fd "\t\t\t<!-- " . 
+							(($class->{TYPE} eq 'interface')? 'Interface': 'Class') .
+							" $class->{NAME} -->\n";
+					}
+
+					print $fd "\t\t\t\t<!-- Method $meth->{PROTO} -->\n";
+
+					my $meth_path = "/api/package[\@name='$pkgname']/" . 
+							"$class->{TYPE}\[\@name='$class->{NAME}']/" . 
+							"$meth->{TYPE}\[\@name='$methname' and count(parameter)=$num_params][$count]";
+					foreach my $param (@{$meth->{PARAMS}}) {
+						next if ref $param->{TYPE} ne 'ENUM';
+						print $fd "\t\t\t\t\t<attr path=\"$meth_path/parameter[position()=$param->{POS}]\"\n";
+						print $fd "\t\t\t\t\t\tname=\"enumType\">$clr_pkg.$param->{TYPE}{CLASS}{NAME}" .
+							name_const_to_camel ($param->{TYPE}{NAME}) . "</attr>\n";
+					}
+
+					if (ref $meth->{RETURN} eq 'ENUM') {
+						# Fixme: this is just a supposition.
+						print $fd "\t\t\t\t\t<attr path=\"$meth_path\"\n";
+						print $fd "\t\t\t\t\t\tname=\"return\">$clr_pkg.$meth->{RETURN}{CLASS}{NAME}" . 
+							name_const_to_camel ($meth->{RETURN}{NAME}) . "</attr>\n";
+					}
 				}
 			}
 		}
@@ -1416,6 +1486,7 @@ sub _parse_methods_for_class {
 
 	my %new_methods = ();
 	my %ctors = ();
+	my %hist = ();
 
 	my $pkg_path = $class->{PKG};
 	$pkg_path =~ tr#.#/#;
@@ -1435,6 +1506,7 @@ sub _parse_methods_for_class {
 			my $proto = $self->_parse_proto ($ul, $class);
 			$ctors{$proto->{FULLNAME}} = $proto;
 			$methods->{$proto->{FULLNAME}} = $proto;
+			$hist{$proto->{NAME}} ++;
 		}
 	}
 
@@ -1444,11 +1516,13 @@ sub _parse_methods_for_class {
 			my $proto = $self->_parse_proto ($ul, $class);
 			$new_methods{$proto->{FULLNAME}} = $proto;
 			$methods->{$proto->{FULLNAME}} = $proto;
+			$hist{$proto->{NAME}} ++;
 		}
 	}
 
 	$class->{CTORS} = \%ctors;
 	$class->{METHODS} = \%new_methods;
+	$class->{HIST} = \%hist;
 	
 	return $methods;
 }
