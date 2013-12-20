@@ -363,7 +363,8 @@ sub printMetadata {
 					my $count = ++$known_meths{$methname . $num_params};
 					my $meth_path = "/api/package[\@name='$pkgname']/" . 
 							"$class->{TYPE}\[\@name='$class->{NAME}']/" . 
-							"$meth->{TYPE}\[\@name='$methname' and count(parameter)=$num_params][$count]";
+							"$meth->{TYPE}\[" . (($meth->{TYPE} eq 'constructor')? '': "\@name='$methname' and ") .
+							"count(parameter)=$num_params][$count]";
 					foreach my $param (@{$meth->{PARAMS}}) {
 						print $fd "\t\t\t\t\t<attr path=\"$meth_path/parameter[position()=$param->{POS}]\"\n";
 						print $fd "\t\t\t\t\t\tname=\"name\">$param->{NAME}</attr>\n";
@@ -418,7 +419,8 @@ sub printMetadata {
 
 					my $meth_path = "/api/package[\@name='$pkgname']/" . 
 							"$class->{TYPE}\[\@name='$class->{NAME}']/" . 
-							"$meth->{TYPE}\[\@name='$methname' and count(parameter)=$num_params][$count]";
+							"$meth->{TYPE}\[" . (($meth->{TYPE} eq 'constructor')? '': "\@name='$methname' and ") .
+							"count(parameter)=$num_params][$count]";
 					print $fd "\t\t\t\t\t<attr path=\"$meth_path\"\n";
 					print $fd "\t\t\t\t\t\tname=\"eventName\">$evtname</attr>\n";
 				}
@@ -471,7 +473,8 @@ sub printMetadata {
 
 					my $meth_path = "/api/package[\@name='$pkgname']/" . 
 							"$class->{TYPE}\[\@name='$class->{NAME}']/" . 
-							"$meth->{TYPE}\[\@name='$methname' and count(parameter)=$num_params][$count]";
+							"$meth->{TYPE}\[" . (($meth->{TYPE} eq 'constructor')? '': "\@name='$methname' and ") .
+							"count(parameter)=$num_params][$count]";
 					foreach my $param (@{$meth->{PARAMS}}) {
 						next if ref $param->{TYPE} ne 'ENUM';
 						print $fd "\t\t\t\t\t<attr path=\"$meth_path/parameter[position()=$param->{POS}]\"\n";
