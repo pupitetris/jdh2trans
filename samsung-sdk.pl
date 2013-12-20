@@ -102,4 +102,10 @@ $trans->printEnumFieldMapping ($dir . '/EnumFields.xml', $pkg);
 $trans->printEnumMethodMapping ($dir . '/EnumMethods.xml', $pkg);
 $trans->printMetadata ($dir . '/Metadata.xml', $pkg);
 
+$pkg = qr/^com.samsung.android.sdk.visualview/;
+$dir = $BASEDIR . '/Samsung.Android.Sdk.Visualview/Transforms';
+$trans->printEnumFieldMapping ($dir . '/EnumFields.xml', $pkg);
+$trans->printEnumMethodMapping ($dir . '/EnumMethods.xml', $pkg);
+$trans->printMetadata ($dir . '/Metadata.xml', $pkg);
+
 1;
