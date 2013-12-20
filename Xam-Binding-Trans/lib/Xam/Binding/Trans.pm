@@ -201,11 +201,14 @@ sub printEnumFieldMapping {
 			my $classname = $class->{NAME};
 			my $jni_class = "$jni_pkg/$classname";
 
+			my $name_prefix = $classname;
+			$name_prefix =~ s/\.//g;
+
 			foreach my $enum_key (sort keys %{$class->{ENUMS}}) {
 				my $enum = $class->{ENUMS}{$enum_key};
 
 				print $fd "\n\t<mapping\n";
-				print $fd "\t\tclr-enum-type=\"$clr_pkg.$classname" . 
+				print $fd "\t\tclr-enum-type=\"$clr_pkg.$name_prefix" . 
 					name_const_to_camel ($enum->{NAME}) . "\"\n";
 				print $fd "\t\tjni-$class->{TYPE}=\"$jni_pkg/$classname\">\n\n";
 				
@@ -274,20 +277,27 @@ sub printEnumMethodMapping {
 
 					foreach my $param (@{$meth->{PARAMS}}) {
 						next if ref $param->{TYPE} ne 'ENUM';
+
+						my $name_prefix = $param->{TYPE}{CLASS}{NAME};
+						$name_prefix =~ s/\.//g;
+						
 						print $fd 
 							"\t\t<method\n" .
 							"\t\t\tjni-name=\"$meth->{NAME}\"\n" .
 							"\t\t\tparameter=\"$param->{NAME}\"\n" .
-							"\t\t\tclr-enum-type=\"$clr_pkg.$param->{TYPE}{CLASS}{NAME}" .
+							"\t\t\tclr-enum-type=\"$clr_pkg.$name_prefix" .
 							name_const_to_camel ($param->{TYPE}{NAME}) . "\" />\n\n";
 					}
 
 					if (ref $meth->{RETURN} eq 'ENUM') {
+						my $name_prefix = $meth->{RETURN}{CLASS}{NAME};
+						$name_prefix =~ s/\.//g;
+						
 						print $fd 
 							"\t\t<method\n" .
 							"\t\t\tjni-name=\"$meth->{NAME}\"\n" .
 							"\t\t\tparameter=\"return\"\n" .
-							"\t\t\tclr-enum-type=\"$clr_pkg.$meth->{RETURN}{CLASS}{NAME}" .
+							"\t\t\tclr-enum-type=\"$clr_pkg.$name_prefix" .
 							name_const_to_camel ($meth->{RETURN}{NAME}) . "\" />\n\n";
 					}
 				}
@@ -503,8 +513,11 @@ sub printMetadata {
 						next if ref $param->{TYPE} ne 'ENUM';
 						my $path = "$meth_path/parameter[position()=$param->{POS}]";
 						if (xpath_check_path ($xp, $path)) {
+							my $name_prefix = $param->{TYPE}{CLASS}{NAME};
+							$name_prefix =~ s/\.//g;
+
 							print $fd "\t\t\t\t\t<attr path=\"$path\"\n";
-							print $fd "\t\t\t\t\t\tname=\"enumType\">$clr_pkg.$param->{TYPE}{CLASS}{NAME}" .
+							print $fd "\t\t\t\t\t\tname=\"enumType\">$clr_pkg.$name_prefix" .
 								name_const_to_camel ($param->{TYPE}{NAME}) . "</attr>\n";
 						}
 					}
@@ -512,8 +525,11 @@ sub printMetadata {
 					if (ref $meth->{RETURN} eq 'ENUM') {
 						# Fixme: this is just a supposition.
 						if (xpath_check_path ($xp, $meth_path)) {
+							my $name_prefix = $meth->{RETURN}{CLASS}{NAME};
+							$name_prefix =~ s/\.//g;
+
 							print $fd "\t\t\t\t\t<attr path=\"$meth_path\"\n";
-							print $fd "\t\t\t\t\t\tname=\"return\">$clr_pkg.$meth->{RETURN}{CLASS}{NAME}" . 
+							print $fd "\t\t\t\t\t\tname=\"return\">$clr_pkg.$name_prefix" . 
 								name_const_to_camel ($meth->{RETURN}{NAME}) . "</attr>\n";
 						}
 					}
