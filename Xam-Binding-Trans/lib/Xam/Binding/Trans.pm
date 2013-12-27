@@ -559,6 +559,21 @@ Boolean, if true, ignore any constants whose type is not int (default 1, do igno
 
 our $ONLY_PARSE_INT_CONSTANTS = 1;
 
+=head2 PARAM_DESC_CORRECTIONS
+
+Hash ref of regular expressions (use qr/myregexp/) vs. replacements to correct the descriptive text of 
+parameters and return values.
+
+Sample:
+
+    $Xam::Binding::Trans::PARAM_DESC_CORRECTIONS = {
+    	qr/REMOVER/ => 'ERASER'
+    };
+
+=cut
+
+our $PARAM_DESC_CORRECTIONS;
+
 =head2 PARAM_PREFIX_CLEANUP_RE
 
 Regular expression (use qr/myregexp/) to clean up names for parameters that are candidates for enums.
@@ -993,7 +1008,15 @@ sub _type_enum_test {
 	my $class = shift;
 	my $method_name = shift;
 
-	my @toks = split (/\s*[\s,*]\s*/, $dd->format);
+	my $txt = $dd->format;
+	if ($PARAM_DESC_CORRECTIONS) {
+		foreach my $re (keys %$PARAM_DESC_CORRECTIONS) {
+			my $subst = $PARAM_DESC_CORRECTIONS->{$re};
+			$txt =~ s/$re/$subst/g;
+		}
+	}
+	
+	my @toks = split (/\s*[\s,*]\s*/, $txt);
 
 	my $param_name;
 	if (scalar @toks > 2 && $toks[2] eq '-') {

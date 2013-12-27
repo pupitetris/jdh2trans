@@ -73,6 +73,17 @@ A hash whose keys indicate enum values that will not be used to infer enumeratio
 
 Boolean, if true, ignore any constants whose type is not int (default 1, do ignore).
 
+## PARAM\_DESC\_CORRECTIONS
+
+Hash ref of regular expressions (use qr/myregexp/) vs. replacements to correct the descriptive text of 
+parameters and return values.
+
+Sample:
+
+    $Xam::Binding::Trans::PARAM_DESC_CORRECTIONS = {
+    	qr/REMOVER/ => 'ERASER'
+    };
+
 ## PARAM\_PREFIX\_CLEANUP\_RE
 
 Regular expression (use qr/myregexp/) to clean up names for parameters that are candidates for enums.

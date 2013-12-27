@@ -17,6 +17,12 @@ die 'BASEDIR not specified' if !$BASEDIR;
 
 # Configuration:
 
+# There's an error in documentation; the terms ERASER and REMOVER are used interchangingly.
+# We'll stay with ERASER.
+$Xam::Binding::Trans::PARAM_DESC_CORRECTIONS = {
+	qr/REMOVER/ => 'ERASER'
+};
+
 # When using param names as prefix to find enums, remove the "Info" and "Option" words.
 $Xam::Binding::Trans::PARAM_PREFIX_CLEANUP_RE = qr/(?:Info|Option)$/;
 
@@ -88,15 +94,8 @@ sub parse {
 	return $trans;
 }
 
-my $dumpfile = 'dumps/state';
-
-#my $trans = parse ($BASEDIR . '/external/Samsung_Mobile_SDK/Docs/API Reference'); $trans->dump ($dumpfile);
-my $trans = Xam::Binding::Trans::load ($dumpfile);
-
-my $dir;
-my $pkg;
-
 sub process_pkg {
+	my $trans = shift;
 	my $pkg = shift;
 	my $dir = shift;
 
@@ -106,11 +105,18 @@ sub process_pkg {
 	$trans->printMetadata ("$dir/Transforms/Metadata.xml", "$dir/obj/Debug/api.xml", $pkg);
 }
 
-process_pkg ('com.samsung.android.sdk', 'Samsung.Android.Sdk');
+my $dumpfile = 'dumps/state2';
 
-process_pkg (qr/^com.samsung.android.sdk.visualview/, 'Samsung.Android.Sdk.Visualview');
+my $trans = parse ($BASEDIR . '/external/Samsung_Mobile_SDK/Docs/API Reference'); $trans->dump ($dumpfile);
+#my $trans = Xam::Binding::Trans::load ($dumpfile);
+
+process_pkg ($trans, 'com.samsung.android.sdk', 'Samsung.Android.Sdk');
+
+process_pkg ($trans, qr/^com.samsung.android.sdk.visualview/, 'Samsung.Android.Sdk.Visualview');
 system ("patch -d $BASEDIR -p0 < samsung-sdk-visualview.patch");
 
-process_pkg ('com.samsung.android.sdk.chord', 'Samsung.Android.Sdk.Chord');
+process_pkg ($trans, 'com.samsung.android.sdk.chord', 'Samsung.Android.Sdk.Chord');
+
+process_pkg ($trans, 'com.samsung.android.sdk.gesture', 'Samsung.Android.Sdk.Gesture');
 
 1;
