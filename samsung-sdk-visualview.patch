@@ -7,7 +7,7 @@
 +	<!-- Package com.sec.android.sviengine -->
 +
 +  <mapping 
-+    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideManagerAnimationType" 
++    clr-enum-type="Sec.Android.Svi.Slide.SASlideManagerAnimationType" 
 +    jni-class="com/sec/android/sviengine/slide/SASlideManager">
 +
 +    <field jni-name="ALL_ANIMATION" clr-name="AllAnimation" value="2" />
@@ -25,7 +25,7 @@
 +  </mapping>
 +
 +  <mapping 
-+    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideBlendType" 
++    clr-enum-type="Sec.Android.Svi.Slide.SASlideBlendType" 
 +    jni-interface="com/sec/android/sviengine/slide/SASlide$BlendType">
 +
 +    <field jni-name="BLEND_ADD" clr-name="Add" value="1" />
@@ -35,7 +35,7 @@
 +  </mapping>
 +
 +  <mapping 
-+    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideLightType" 
++    clr-enum-type="Sec.Android.Svi.Slide.SASlideLightType" 
 +    jni-interface="com/sec/android/sviengine/slide/SASlide$LightType">
 +
 +    <field jni-name="LINEAR_LIGHT" clr-name="LinearLight" value="2" />
@@ -45,7 +45,7 @@
 +  </mapping>
 +
 +  <mapping 
-+    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideImageScaleType" 
++    clr-enum-type="Sec.Android.Svi.Slide.SASlideImageScaleType" 
 +    jni-interface="com/sec/android/sviengine/slide/SASlide$ImageScaleType">
 +
 +    <field jni-name="CENTER" clr-name="Center" value="5" />
@@ -60,7 +60,7 @@
 +  </mapping>
 +
 +  <mapping 
-+    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideFilterType" 
++    clr-enum-type="Sec.Android.Svi.Slide.SASlideFilterType" 
 +    jni-interface="com/sec/android/sviengine/slide/SASlide$FilterType">
 +
 +    <field jni-name="FILTER_CARTOON" clr-name="Cartoon" value="4" />
@@ -75,7 +75,7 @@
 +  </mapping>
 +
 +  <mapping 
-+    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideImageFormat" 
++    clr-enum-type="Sec.Android.Svi.Slide.SASlideImageFormat" 
 +    jni-interface="com/sec/android/sviengine/slide/SASlide$ImageFormat">
 +
 +    <field jni-name="NONE" clr-name="None" value="0" />
@@ -85,7 +85,7 @@
 +  </mapping>
 +
 +  <mapping 
-+    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideRTEffectType" 
++    clr-enum-type="Sec.Android.Svi.Slide.SASlideRTEffectType" 
 +    jni-interface="com/sec/android/sviengine/slide/SASlide$RTEffectType">
 +
 +    <field jni-name="RT_DIRECTIONBLUR" clr-name="Directionblur" value="9" />
@@ -102,7 +102,7 @@
 +  </mapping>
 +
 +  <mapping 
-+    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideDeformDirection" 
++    clr-enum-type="Sec.Android.Svi.Slide.SASlideDeformDirection" 
 +    jni-interface="com/sec/android/sviengine/slide/SASlide$SlideDeformDirection">
 +
 +    <field jni-name="DEFORM_HORIZONTAL" clr-name="Horizontal" value="0" />
@@ -113,7 +113,7 @@
 +  </mapping>
 +
 +  <mapping 
-+    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideDeformType" 
++    clr-enum-type="Sec.Android.Svi.Slide.SASlideDeformType" 
 +    jni-interface="com/sec/android/sviengine/slide/SASlide$SlideDeformType">
 +
 +    <field jni-name="DEFORM_BRICK" clr-name="Brick" value="9" />
@@ -135,7 +135,7 @@
 +  </mapping>
 +
 +  <mapping 
-+    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideSwipeType" 
++    clr-enum-type="Sec.Android.Svi.Slide.SASlideSwipeType" 
 +    jni-interface="com/sec/android/sviengine/slide/SASlide$SlideSwipeType">
 +
 +    <field jni-name="SWIPE_LINEAR" clr-name="Linear" value="1" />
@@ -145,7 +145,7 @@
 +  </mapping>
 +
 +  <mapping 
-+    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideType" 
++    clr-enum-type="Sec.Android.Svi.Slide.SASlideType" 
 +    jni-interface="com/sec/android/sviengine/slide/SASlide$SlideType">
 +
 +    <field jni-name="BASE_SLIDE" clr-name="BaseSlide" value="0" />
@@ -156,7 +156,7 @@
 +  </mapping>
 +
 +  <mapping 
-+    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideZOrderType" 
++    clr-enum-type="Sec.Android.Svi.Slide.SASlideZOrderType" 
 +    jni-interface="com/sec/android/sviengine/slide/SASlide$SlideZOrderType">
 +
 +    <field jni-name="BOTTOM" clr-name="Bottom" value="0" />
@@ -166,7 +166,7 @@
 +  </mapping>
 +
 +  <mapping 
-+    clr-enum-type="Sec.Android.Sviengine.Animation.SAAnimationInterpolatorType" 
++    clr-enum-type="Sec.Android.Svi.Animation.SAAnimationInterpolatorType" 
 +    jni-interface="com/sec/android/sviengine/animation/SAAnimation$InterpolatorType">
 +
 +    <field jni-name="ACCELERATE" clr-name="Accelerate" value="1" />
@@ -215,7 +215,7 @@
 +  </mapping>
 +
 +  <mapping 
-+    clr-enum-type="Sec.Android.Sviengine.Animation.SAAnimationClass" 
++    clr-enum-type="Sec.Android.Svi.Animation.SAAnimationClass" 
 +    jni-interface="com/sec/android/sviengine/animation/SAAnimation$SAAnimationClass">
 +
 +    <field jni-name="ANIMATION_SET" clr-name="AnimationSet" value="5" />
@@ -228,7 +228,7 @@
 +  </mapping>
 +
 +  <mapping 
-+    clr-enum-type="Sec.Android.Sviengine.Animation.SAPropertyAnimationType" 
++    clr-enum-type="Sec.Android.Svi.Animation.SAPropertyAnimationType" 
 +    jni-interface="com/sec/android/sviengine/animation/SAPropertyAnimation$PropertyAnimationType">
 +
 +    <field jni-name="BACKFACE_TEXTURE_REGION" clr-name="BackfaceTextureRegion" value="18" />
@@ -271,7 +271,7 @@
 +  </mapping>
 +
 +  <mapping 
-+    clr-enum-type="Sec.Android.Sviengine.Animation.SATransitionAnimationDirection" 
++    clr-enum-type="Sec.Android.Svi.Animation.SATransitionAnimationDirection" 
 +    jni-interface="com/sec/android/sviengine/animation/SATransitionAnimation$DirectionType">
 +
 +    <field jni-name="DOWN" clr-name="Down" value="3" />
@@ -282,7 +282,7 @@
 +  </mapping>
 +
 +  <mapping 
-+    clr-enum-type="Sec.Android.Sviengine.Animation.SATransitionAnimationTransition" 
++    clr-enum-type="Sec.Android.Svi.Animation.SATransitionAnimationTransition" 
 +    jni-interface="com/sec/android/sviengine/animation/SATransitionAnimation$TransitionType">
 +
 +    <field jni-name="BLIND" clr-name="Blind" value="0" />
@@ -341,7 +341,7 @@
 +  </mapping>
 +
 +  <mapping 
-+    clr-enum-type="Sec.Android.Sviengine.Slide.SASlideManagerSlidePriority" 
++    clr-enum-type="Sec.Android.Svi.Slide.SASlideManagerSlidePriority" 
 +    jni-interface="com/sec/android/sviengine/slide/SASlideManager$SlidePriority">
 +
 +    <field jni-name="SUI_PRIORITY_CONTEXTMENU" clr-name="Contextmenu" value="4" />
@@ -354,7 +354,7 @@
 +  </mapping>
 +
 +  <mapping 
-+    clr-enum-type="Sec.Android.Sviengine.Basetype.SAImageCompressTextureType" 
++    clr-enum-type="Sec.Android.Svi.Basetype.SAImageCompressTextureType" 
 +    jni-interface="com/sec/android/sviengine/basetype/SAImage$CompressTextureType">
 +
 +    <field jni-name="COMPRESS_ATC" clr-name="Atc" value="0" />
@@ -369,12 +369,29 @@
  	<!-- Namespace renaming -->
  		<attr path="/api/package[@name='com.samsung.android.sdk.visualview']" name="managedName">Samsung.Android.Sdk.Visualview</attr>
  		<attr path="/api/package[@name='com.samsung.android.sdk.visualview.animation']" name="managedName">Samsung.Android.Sdk.Visualview.Animation</attr>
-+		<attr path="/api/package[@name='com.sec.android.sviengine']" name="managedName">Sec.Android.Sviengine</attr>
-+		<attr path="/api/package[@name='com.sec.android.sviengine.animation']" name="managedName">Sec.Android.Sviengine.Animation</attr>
-+		<attr path="/api/package[@name='com.sec.android.sviengine.basetype']" name="managedName">Sec.Android.Sviengine.Basetype</attr>
-+		<attr path="/api/package[@name='com.sec.android.sviengine.debug']" name="managedName">Sec.Android.Sviengine.Debug</attr>   
-+		<attr path="/api/package[@name='com.sec.android.sviengine.glsurface']" name="managedName">Sec.Android.Sviengine.GlSurface</attr>
-+		<attr path="/api/package[@name='com.sec.android.sviengine.slide']" name="managedName">Sec.Android.Sviengine.Slide</attr>
++		<attr path="/api/package[@name='com.sec.android.sviengine']" name="managedName">Sec.Android.Svi</attr>
++		<attr path="/api/package[@name='com.sec.android.sviengine.animation']" name="managedName">Sec.Android.Svi.Animation</attr>
++		<attr path="/api/package[@name='com.sec.android.sviengine.basetype']" name="managedName">Sec.Android.Svi.Basetype</attr>
++		<attr path="/api/package[@name='com.sec.android.sviengine.debug']" name="managedName">Sec.Android.Svi.Debug</attr>   
++		<attr path="/api/package[@name='com.sec.android.sviengine.glsurface']" name="managedName">Sec.Android.Svi.GlSurface</attr>
++		<attr path="/api/package[@name='com.sec.android.sviengine.slide']" name="managedName">Sec.Android.Svi.Slide</attr>
  
  	<!-- Parameter names -->
  		<!-- Package com.samsung.android.sdk.visualview -->
+@@ -567,4 +573,16 @@
+ 					<attr path="/api/package[@name='com.samsung.android.sdk.visualview.animation']/class[@name='SVBasicAnimation']/constructor[count(parameter)=3][2]/parameter[position()=1]"
+ 						name="enumType">Samsung.Android.Sdk.Visualview.Animation.SVAnimationType</attr>
+ 
++	<!-- Change visibility so that the method can be found as an override -->
++		<!-- Package com.sec.android.sviengine -->
++			<!-- Class SVIEngine -->
++				<!-- Method onCreate(android.os.Bundle) -->
++					<attr path="/api/package[@name='com.sec.android.sviengine']/class[@name='SVIEngine']/method[@name='onCreate' and count(parameter)=1 and parameter[1][@type='android.os.Bundle']]"
++						  name="visibility">protected</attr>
++
++	<!-- Deleted finalize methods, reimplement them as destructors in Additions/destructors.cs -->
++		<!-- Package com.sec.android.sviengine.basetype -->
++			<!-- Class SAImage -->
++			 <remove-node path="/api/package[@name='com.sec.android.sviengine.basetype']/class[@name='SAImage']/method[@name='finalize' and count(parameter)=0]" />
++
+ </metadata>
