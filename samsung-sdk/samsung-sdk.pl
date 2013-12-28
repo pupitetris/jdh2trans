@@ -120,6 +120,10 @@ process_pkg ($trans, 'com.samsung.android.sdk.chord', 'Samsung.Android.Sdk.Chord
 process_pkg ($trans, 'com.samsung.android.sdk.gesture', 'Samsung.Android.Sdk.Gesture');
 
 process_pkg ($trans, 'com.samsung.android.sdk.imagefilter', 'Samsung.Android.Sdk.Imagefilter');
-system ("patch -d $BASEDIR -p0 < samsung-sdk-imagefilter.patch");
+#system ("patch -d $BASEDIR -p0 < samsung-sdk-imagefilter.patch");
+
+process_pkg ($trans, qr/^com.samsung.android.sdk.look/, 'Samsung.Android.Sdk.Look');
+
+process_pkg ($trans, qr/^com.samsung.android.sdk.pen/, 'Samsung.Android.Sdk.Pen');
 
 1;
