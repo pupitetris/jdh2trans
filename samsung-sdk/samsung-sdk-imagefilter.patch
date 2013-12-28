@@ -1,5 +1,5 @@
---- a.xml	2013-12-27 17:56:02.000000000 -0600
-+++ Metadata.xml	2013-12-27 17:58:39.000000000 -0600
+--- Samsung.Android.Sdk.Imagefilter/Transforms/Metadata.xml	2013-12-27 17:56:02.000000000 -0600
++++ Samsung.Android.Sdk.Imagefilter/Transforms/x/Metadata.xml	2013-12-27 17:58:39.000000000 -0600
 @@ -33,4 +33,7 @@
  					<attr path="/api/package[@name='com.samsung.android.sdk.imagefilter']/class[@name='SifImageFilter']/method[@name='setImageTransparency' and count(parameter)=2][1]/parameter[position()=2]"
  						name="name">alpha</attr>
