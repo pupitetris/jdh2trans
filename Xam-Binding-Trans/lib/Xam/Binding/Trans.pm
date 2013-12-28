@@ -369,10 +369,7 @@ sub printMetadata {
 			my $class = $pkg->{CLASSES}{$class_key};
 			my %known_meths = ();
 
-			print $fd "\t\t\t<!-- " . 
-				(($class->{TYPE} eq 'interface')? 'Interface': 'Class') .
-				" $class->{NAME} -->\n";
-
+			my $found_in_class = 0;
 			foreach my $h ($class->{CTORS}, $class->{METHODS}) {
 				foreach my $meth_key (sort keys %$h) {
 					my $meth = $h->{$meth_key};
@@ -389,6 +386,13 @@ sub printMetadata {
 							"count(parameter)=$num_params][$count]";
 
 					next if !xpath_check_path ($xp, $meth_path);
+
+					if (!$found_in_class) {
+						$found_in_class = 1;
+						print $fd "\t\t\t<!-- " . 
+							(($class->{TYPE} eq 'interface')? 'Interface': 'Class') .
+							" $class->{NAME} -->\n";
+					}
 
 					print $fd "\t\t\t\t<!-- Method $meth->{PROTO} -->\n";
 					foreach my $param (@{$meth->{PARAMS}}) {
