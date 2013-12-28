@@ -3,7 +3,7 @@
 # For testing purposes, this program can be invoked in this fashion 
 # to avoid module installation:
 
-# $ perl -I Xam-Binding-Trans/lib ./samsung-sdk.pl ~/Work/components/SamsungSDK/source
+# $ perl -I ../Xam-Binding-Trans/lib ./samsung-sdk.pl ~/Work/components/SamsungSDK/source
 
 use strict;
 use warnings FATAL => 'all';
@@ -105,10 +105,10 @@ sub process_pkg {
 	$trans->printMetadata ("$dir/Transforms/Metadata.xml", "$dir/obj/Debug/api.xml", $pkg);
 }
 
-my $dumpfile = 'dumps/state2';
+my $dumpfile = '../dumps/state';
 
-my $trans = parse ($BASEDIR . '/external/Samsung_Mobile_SDK/Docs/API Reference'); $trans->dump ($dumpfile);
-#my $trans = Xam::Binding::Trans::load ($dumpfile);
+#my $trans = parse ($BASEDIR . '/external/Samsung_Mobile_SDK/Docs/API Reference'); $trans->dump ($dumpfile);
+my $trans = Xam::Binding::Trans::load ($dumpfile);
 
 process_pkg ($trans, 'com.samsung.android.sdk', 'Samsung.Android.Sdk');
 
@@ -118,5 +118,8 @@ system ("patch -d $BASEDIR -p0 < samsung-sdk-visualview.patch");
 process_pkg ($trans, 'com.samsung.android.sdk.chord', 'Samsung.Android.Sdk.Chord');
 
 process_pkg ($trans, 'com.samsung.android.sdk.gesture', 'Samsung.Android.Sdk.Gesture');
+
+process_pkg ($trans, 'com.samsung.android.sdk.imagefilter', 'Samsung.Android.Sdk.Imagefilter');
+system ("patch -d $BASEDIR -p0 < samsung-sdk-imagefilter.patch");
 
 1;
