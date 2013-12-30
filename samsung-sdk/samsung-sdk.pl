@@ -109,6 +109,12 @@ sub process_pkg {
 	$trans->printMetadata ("$dir/Transforms/Metadata.xml", "$dir/obj/Debug/api.xml", $pkg);
 }
 
+sub patch {
+	my $name = shift;
+
+	system ("patch -d $BASEDIR -p0 < samsung-sdk-$name.patch");
+}
+
 my $dumpfile = '../dumps/state';
 
 #my $trans = parse ($BASEDIR . '/external/Samsung_Mobile_SDK/Docs/API Reference'); $trans->dump ($dumpfile);
@@ -119,18 +125,19 @@ $DB::single = 1;
 process_pkg ($trans, 'com.samsung.android.sdk', 'Samsung.Android.Sdk');
 
 process_pkg ($trans, qr/^com.samsung.android.sdk.visualview/, 'Samsung.Android.Sdk.Visualview');
-system ("patch -d $BASEDIR -p0 < samsung-sdk-visualview.patch");
+patch ('visualview');
 
 process_pkg ($trans, 'com.samsung.android.sdk.chord', 'Samsung.Android.Sdk.Chord');
 
 process_pkg ($trans, 'com.samsung.android.sdk.gesture', 'Samsung.Android.Sdk.Gesture');
 
 process_pkg ($trans, 'com.samsung.android.sdk.imagefilter', 'Samsung.Android.Sdk.Imagefilter');
-#system ("patch -d $BASEDIR -p0 < samsung-sdk-imagefilter.patch");
+#patch ('imagefilter');
 
 process_pkg ($trans, qr/^com.samsung.android.sdk.look/, 'Samsung.Android.Sdk.Look');
+patch ('look');
 
 process_pkg ($trans, qr/^com.samsung.android.sdk.pen/, 'Samsung.Android.Sdk.Pen');
-system ("patch -d $BASEDIR -p0 < samsung-sdk-pen.patch");
+patch ('pen');
 
 1;
