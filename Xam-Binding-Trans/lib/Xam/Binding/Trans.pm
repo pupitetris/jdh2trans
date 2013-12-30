@@ -167,6 +167,46 @@ sub numeric {
 	{ $a <=> $b }
 }
 
+sub xpath_pkg_path {
+	my $pkgname = shift;
+
+	return "/api/package[\@name='$pkgname']";
+}
+
+sub xpath_class_path {
+	my $class = shift;
+
+	return xpath_pkg_path ($class->{PKG}) .
+		"/$class->{TYPE}\[\@name='$class->{NAME}']";
+}
+
+sub xpath_method_path {
+	my $meth = shift;
+
+	my $param_count = scalar @{$meth->{PARAMS}};
+	my $param_path = "count(parameter)=$param_count";
+	$i = 0;
+	while ($i < $param_count) {
+		my $param = $meth->{PARAMS}[$i];
+		my $type = $param->{TYPE_ORIG}? $param->{TYPE_ORIG}: $param->{TYPE};
+		$i++;
+		$param_path .= " and parameter[$i][\@type='$type']";
+	}
+
+	return xpath_class_path ($meth->{CLASS}) .
+		"/$meth->{TYPE}[" . (($meth->{TYPE} eq 'constructor')? '': "\@name='$meth->{NAME} and ") .
+		"$param_path]";
+}
+
+sub xpath_check_path {
+	my $xp = shift;
+	my $path = shift;
+	
+	return 1 if !$xp || $xp->exists ($path);
+	print STDERR "Metadata: Path $path matches no nodes.\n";
+	return 0;
+}
+
 =head2 $obj->printEnumFieldMapping (xml_file, packages ...)
 
 Write an EnumFields.xml mapping file for the given packages at the xml_file location. All loaded packages
@@ -321,15 +361,6 @@ Studio after compiling the binding package; use the empty string if none is avai
 
 =cut
 
-sub xpath_check_path {
-	my $xp = shift;
-	my $path = shift;
-	
-	return 1 if !$xp || $xp->exists ($path);
-	print STDERR "Metadata: Path $path matches no nodes.\n";
-	return 0;
-}
-
 sub printMetadata {
 	my $self = shift;
 	my $xml_file = shift;
@@ -368,24 +399,13 @@ sub printMetadata {
 
 		foreach my $class_key (sort keys %{$pkg->{CLASSES}}) {
 			my $class = $pkg->{CLASSES}{$class_key};
-			my %known_meths = ();
 
 			my $found_in_class = 0;
 			foreach my $h ($class->{CTORS}, $class->{METHODS}) {
 				foreach my $meth_key (sort keys %$h) {
 					my $meth = $h->{$meth_key};
-					my $methname = $meth->{TYPE} eq 'constructor'?
-						$class->{NAME}:	$meth->{NAME};
 
-					my $num_params = scalar @{$meth->{PARAMS}};
-					next if $num_params == 0;
-
-					my $count = ++$known_meths{$methname . $num_params};
-					my $meth_path = "/api/package[\@name='$pkgname']/" . 
-							"$class->{TYPE}\[\@name='$class->{NAME}']/" . 
-							"$meth->{TYPE}\[" . (($meth->{TYPE} eq 'constructor')? '': "\@name='$methname' and ") .
-							"count(parameter)=$num_params][$count]";
-
+					my $meth_path = xpath_method_path ($meth);
 					next if !xpath_check_path ($xp, $meth_path);
 
 					if (!$found_in_class) {
@@ -416,27 +436,19 @@ sub printMetadata {
 		my $found_in_pkg = 0;
 		foreach my $class_key (sort keys %{$pkg->{CLASSES}}) {
 			my $class = $pkg->{CLASSES}{$class_key};
-			my %known_meths = ();
 
 			my $found_in_class = 0;
 			foreach my $h ($class->{METHODS}) {
 				foreach my $meth_key (sort keys %$h) {
 					my $meth = $h->{$meth_key};
 					my $methname = $meth->{NAME};
-					my $num_params = scalar @{$meth->{PARAMS}};
 					
 					next if $methname !~ /^[oO]n./;
 
 					my $evtname = $methname;
 					$evtname =~ s/^o/O/;
 
-					my $count = ++$known_meths{$methname . $num_params};
-
-					my $meth_path = "/api/package[\@name='$pkgname']/" . 
-							"$class->{TYPE}\[\@name='$class->{NAME}']/" . 
-							"$meth->{TYPE}\[" . (($meth->{TYPE} eq 'constructor')? '': "\@name='$methname' and ") .
-							"count(parameter)=$num_params][$count]";
-
+					my $meth_path = xpath_method_path ($meth);
 					next if !xpath_check_path ($xp, $meth_path);
 
 					if (!$found_events) {
@@ -473,7 +485,6 @@ sub printMetadata {
 		my $found_in_pkg = 0;
 		foreach my $class_key (sort keys %{$pkg->{CLASSES}}) {
 			my $class = $pkg->{CLASSES}{$class_key};
-			my %known_meths = ();
 
 			my $found_in_class = 0;
 			foreach my $h ($class->{CTORS}, $class->{METHODS}) {
@@ -483,10 +494,6 @@ sub printMetadata {
 					my $methname = $meth->{NAME};
 					
 					next if $class->{HIST}{$methname} < 2; # Method has to be an overload.
-
-					my $num_params = scalar @{$meth->{PARAMS}};
-
-					my $count = ++$known_meths{$methname . $num_params};
 
 					if (!$found_overloads) {
 						$found_overloads = 1;
@@ -505,11 +512,7 @@ sub printMetadata {
 							" $class->{NAME} -->\n";
 					}
 
-					my $meth_path = "/api/package[\@name='$pkgname']/" . 
-							"$class->{TYPE}\[\@name='$class->{NAME}']/" . 
-							"$meth->{TYPE}\[" . (($meth->{TYPE} eq 'constructor')? '': "\@name='$methname' and ") .
-							"count(parameter)=$num_params][$count]";
-
+					my $meth_path = xpath_method_path ($meth);
 					next if !xpath_check_path ($xp, $meth_path);
 
 					print $fd "\t\t\t\t<!-- Method $meth->{PROTO} -->\n";
@@ -529,15 +532,13 @@ sub printMetadata {
 
 					if (ref $meth->{RETURN} eq 'ENUM') {
 						# Fixme: this is just a supposition.
-						if (xpath_check_path ($xp, $meth_path)) {
-							my $clr_prefix = $meth->{RETURN}{CLASS}{NAME};
-							$clr_prefix =~ s/\.//g;
-							$clr_prefix = pkgname_to_clr ($meth->{RETURN}{PKG}) . ".$clr_prefix";
+						my $clr_prefix = $meth->{RETURN}{CLASS}{NAME};
+						$clr_prefix =~ s/\.//g;
+						$clr_prefix = pkgname_to_clr ($meth->{RETURN}{PKG}) . ".$clr_prefix";
 
-							print $fd "\t\t\t\t\t<attr path=\"$meth_path\"\n";
-							print $fd "\t\t\t\t\t\tname=\"return\">$clr_prefix" . 
-								name_const_to_camel ($meth->{RETURN}{NAME}) . "</attr>\n";
-						}
+						print $fd "\t\t\t\t\t<attr path=\"$meth_path\"\n";
+						print $fd "\t\t\t\t\t\tname=\"return\">$clr_prefix" . 
+							name_const_to_camel ($meth->{RETURN}{NAME}) . "</attr>\n";
 					}
 				}
 			}
@@ -1312,14 +1313,18 @@ sub _parse_proto {
 			next;
 		}
 
-		$param_type = $self->_type_qualify ($param_type, $class, \@anchors, $ul, $param_no, $name, $param_name);
+		$new_type = $self->_type_qualify ($param_type, $class, \@anchors, $ul, $param_no, $name, $param_name);
 
 		# Creating new param
-		my $param = { 
-			TYPE => $param_type, 
+		my $param = {
+			TYPE => $new_type, 
 			NAME => $param_name,
 			POS => $param_no + 1
 		};
+
+		if ($new_type ne $param_type) {
+			$param->{TYPE_ORIG} = $param_type;
+		}
 
 		push @params, $param;
 		$param_no++;
