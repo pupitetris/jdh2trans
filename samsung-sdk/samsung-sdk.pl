@@ -114,6 +114,8 @@ my $dumpfile = '../dumps/state';
 #my $trans = parse ($BASEDIR . '/external/Samsung_Mobile_SDK/Docs/API Reference'); $trans->dump ($dumpfile);
 my $trans = Xam::Binding::Trans::load ($dumpfile);
 
+$DB::single = 1;
+
 process_pkg ($trans, 'com.samsung.android.sdk', 'Samsung.Android.Sdk');
 
 process_pkg ($trans, qr/^com.samsung.android.sdk.visualview/, 'Samsung.Android.Sdk.Visualview');
@@ -129,5 +131,6 @@ process_pkg ($trans, 'com.samsung.android.sdk.imagefilter', 'Samsung.Android.Sdk
 process_pkg ($trans, qr/^com.samsung.android.sdk.look/, 'Samsung.Android.Sdk.Look');
 
 process_pkg ($trans, qr/^com.samsung.android.sdk.pen/, 'Samsung.Android.Sdk.Pen');
+system ("patch -d $BASEDIR -p0 < samsung-sdk-pen.patch");
 
 1;

@@ -1,0 +1,80 @@
+--- Samsung.Android.Sdk.Pen/Transforms/Metadata.xml	2013-12-30 10:00:56.000000000 -0600
++++ Samsung.Android.Sdk.Pen/Transforms/x/Metadata.xml	2013-12-30 09:59:50.000000000 -0600
+@@ -8,6 +8,12 @@
+ 		<attr path="/api/package[@name='com.samsung.android.sdk.pen.recognition']" name="managedName">Samsung.AndroidSdk.Pen.Recognition</attr>
+ 		<attr path="/api/package[@name='com.samsung.android.sdk.pen.settingui']" name="managedName">Samsung.AndroidSdk.Pen.Settingui</attr>
+ 
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.recognition.preload']" name="managedName">Samsung.AndroidSdk.Pen.Recognition.Preload</attr>
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.plugin.interfaces']" name="managedName">Samsung.AndroidSdk.Pen.Plugin.Interfaces</attr>
++		<attr path="/api/package[@name='com.samsung.vip.engine']" name="managedName">Samsung.Vip.Engine</attr>
++		<attr path="/api/package[@name='com.samsung.vip.engine.shape']" name="managedName">Samsung.Vip.Engine.Shape</attr>
++
++
+ 	<!-- Parameter names -->
+ 		<!-- Package com.samsung.android.sdk.pen -->
+ 			<!-- Class Spen -->
+@@ -3277,4 +3283,64 @@
+ 					<attr path="/api/package[@name='com.samsung.android.sdk.pen.engine']/class[@name='SpenView']/method[@name='setPageDoc' and count(parameter)=4][1]/parameter[position()=3]"
+ 						name="enumType">Samsung.AndroidSdk.Pen.Engine.SpenViewPageTransitionEffectType</attr>
+ 
++	<!-- The type `Samsung.AndroidSdk.Pen.Engine.SpenControlList' already contains a definition for `Group' -->
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.engine']/class[@name='SpenControlList.Group']"
++			  name="managedName">SpenGroup</attr>
++
++	<!-- Visibility issues: Type or namespace does not exist. -->
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.settingui']/class[@name='SPenImageUtil']"
++			  name="visibility">public</attr>
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.settingui']/class[@name='SPenTextUtil']"
++			  name="visibility">public</attr>
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.settingui']/class[@name='SpenColorGradationView']"
++			  name="visibility">public</attr>
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.settingui']/class[@name='SpenColorPaletteView']"
++			  name="visibility">public</attr>
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.settingui']/class[@name='SpenColorPickerLayout']"
++			  name="visibility">public</attr>
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.settingui']/class[@name='SpenPenPluginInfo']"
++			  name="visibility">public</attr>
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.settingui']/class[@name='SpenPenPluginManager']"
++			  name="visibility">public</attr>
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.settingui']/class[@name='SpenPenPresetInfo']"
++			  name="visibility">public</attr>
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.settingui']/class[@name='SpenPenPreview']"
++			  name="visibility">public</attr>
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.settingui']/class[@name='SpenPenPresetListAdapter']"
++			  name="visibility">public</attr>
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.settingui']/class[@name='SpenScrollView']"
++			  name="visibility">public</attr>
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.settingui']/class[@name='SpenTextPreView']"
++			  name="visibility">public</attr>
++		
++	<!-- Visibility issues: Inconsistent accessibility. -->
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.engine']/class[@name='SpenControlBase.CoordinateInfo']"
++			  name="visibility">public</attr>
++
++	<!-- Visibility issues: Change to protected so that the method can be found as an override. -->
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.engine']/class[@name='SpenControlBase']/method[@name='onDraw' and count(parameter)=1 and parameter[1][@type='android.graphics.Canvas']]"
++			  name="visibility">protected</attr>
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.recognition']/class[@name='SpenEquationRecognitionManager']/method[@name='close' and count(parameter)=0]"
++			  name="visibility">protected</attr>
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.recognition']/class[@name='SpenEquationRecognitionManager']/method[@name='getPrivateKeyHint' and count(parameter)=1 and parameter[1][@type='com.samsung.android.sdk.pen.recognition.SpenRecognitionInfo']]"
++			  name="visibility">protected</attr>
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.recognition']/class[@name='SpenShapeRecognitionManager']/method[@name='close' and count(parameter)=0]"
++			  name="visibility">protected</attr>
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.recognition']/class[@name='SpenShapeRecognitionManager']/method[@name='getPrivateKeyHint' and count(parameter)=1 and parameter[1][@type='com.samsung.android.sdk.pen.recognition.SpenRecognitionInfo']]"
++			  name="visibility">protected</attr>
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.recognition']/class[@name='SpenTextRecognitionManager']/method[@name='close' and count(parameter)=0]"
++			  name="visibility">protected</attr>
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.recognition']/class[@name='SpenTextRecognitionManager']/method[@name='getPrivateKeyHint' and count(parameter)=1 and parameter[1][@type='com.samsung.android.sdk.pen.recognition.SpenRecognitionInfo']]"
++			  name="visibility">protected</attr>
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.settingui']/class[@name='SpenScrollView']/method[@name='computeVerticalScrollRange' and count(parameter)=0]"
++			  name="visibility">protected</attr>
++
++		<remove-node path="/api/package[@name='com.samsung.android.sdk.pen.recognition.preload']/class[@name='EquationRecognition']/method[@name='dispose' and count(parameter)=0]" />
++		<remove-node path="/api/package[@name='com.samsung.android.sdk.pen.recognition.preload']/class[@name='ShapeRecognition']/method[@name='dispose' and count(parameter)=0]" />
++		<remove-node path="/api/package[@name='com.samsung.android.sdk.pen.recognition.preload']/class[@name='TextRecognition']/method[@name='dispose' and count(parameter)=0]" />
++
++		<!-- Unlike Java, C# nested types can be overriden too, generating conflict potential. -->
++		<attr path="/api/package[@name='com.samsung.android.sdk.pen.engine']/interface[@name='SpenControlTextBox.ActionListener']"
++			  name="managedName">IControlTextBoxActionListener</attr>
++
+ </metadata>
