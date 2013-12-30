@@ -604,6 +604,24 @@ Regular expression (use qr/myregexp/) specifying those parameter names that won'
 
 our $PARAM_NAME_ENUM_EXCLUDE_RE;
 
+=head2 PACKAGE_CLR_TRANSFORM_RE
+
+Regular expression (use qr/myregexp/) that will be applied to be replaced by PACKAGE_CLR_TRANSFROM_SUBST
+to generate the CLR version of packages.
+
+=cut
+
+our $PACKAGE_CLR_TRANSFORM_RE = qr/^com\./;
+
+=head2 PACKAGE_CLR_TRANSFORM_SUBST
+
+A string of what is to be put in place of what is matched by PACKAGE_CLR_TRANSFORM_RE to generate the CLR version
+of package names.
+
+=cut
+
+our $PACKAGE_CLR_TRANSFORM_SUBST = '';
+
 =head1 SEE ALSO
 
 "Binding a Java Library (.jar)" from Xamarin, Inc.
@@ -701,8 +719,11 @@ sub name_const_to_camel {
 sub pkgname_to_clr {
 	my $pkgname = shift;
 
+	if ($PACKAGE_CLR_TRANSFORM_RE) {
+		$pkgname =~ s/$PACKAGE_CLR_TRANSFORM_RE/$PACKAGE_CLR_TRANSFORM_SUBST/g;
+	}
+
 	my @words = split ('\.', $pkgname);
-	shift @words;
 	
 	return join ('.', map {ucfirst $_} @words);
 }
