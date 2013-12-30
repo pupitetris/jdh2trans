@@ -41,6 +41,10 @@ $Xam::Binding::Trans::PARAM_NAME_ENUM_EXCLUDE_RE = qr/^duration$/;
 # This is the default: non-int constants are ommited from CONSTS structure to simplify reports.
 $Xam::Binding::Trans::ONLY_PARSE_INT_CONSTANTS = 1;
 
+# Render packages as Samsung.AndroidSDK or we'll get confusions with the namespaces otherwise.
+$Xam::Binding::Trans::PACKAGE_CLR_TRANSFORM_RE = qr/^com.samsung.android.sdk/;
+$Xam::Binding::Trans::PACKAGE_CLR_TRANSFORM_SUBST = 'Samsung.AndroidSdk';
+
 # Parse the documentation.
 sub parse {
 	my $basedir = shift;
