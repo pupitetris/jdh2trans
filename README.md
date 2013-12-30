@@ -47,15 +47,17 @@ Parse the structure of the given packages inside the dir path. Parse all package
 if no packages are specified. Restricting packages to parse is a good idea since parsing methods
 within classes is expensive.
 
-## $obj->printEnumFieldMapping (xml\_file, packages ...)
+## $obj->printEnumFieldMapping (xml\_file, api\_file, packages ...)
 
 Write an EnumFields.xml mapping file for the given packages at the xml\_file location. All loaded packages
-will be processed if no packages are specified.
+will be processed if no packages are specified. api\_file is the api.xml file produced by Xamarin Studio
+after compiling the binding package; use the empty string if none is available.
 
-## $obj->printEnumMethodMapping (xml\_file, packages ...)
+## $obj->printEnumMethodMapping (xml\_file, api\_file, packages ...)
 
 Write an EnumMethods.xml mapping file for the given packages at the xml\_file location. All loaded packages
-will be processed if no packages are specified.
+will be processed if no packages are specified. api\_file is the api.xml file produced by Xamarin Studio
+after compiling the binding package; use the empty string if none is available.
 
 ## $obj->printMetadata (xml\_file, api\_file, packages ...)
 
@@ -95,6 +97,16 @@ Regular expression (use qr/myregexp/) to clean up get/set method names used for 
 ## PARAM\_NAME\_ENUM\_EXCLUDE\_RE
 
 Regular expression (use qr/myregexp/) specifying those parameter names that won't be checked to see if they are enums.
+
+## PACKAGE\_CLR\_TRANSFORM\_RE
+
+Regular expression (use qr/myregexp/) that will be applied to be replaced by PACKAGE\_CLR\_TRANSFROM\_SUBST
+to generate the CLR version of packages.
+
+## PACKAGE\_CLR\_TRANSFORM\_SUBST
+
+A string of what is to be put in place of what is matched by PACKAGE\_CLR\_TRANSFORM\_RE to generate the CLR version
+of package names.
 
 # SEE ALSO
 

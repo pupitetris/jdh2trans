@@ -104,8 +104,8 @@ sub process_pkg {
 	my $dir = shift;
 
 	$dir = "$BASEDIR/$dir";
-	$trans->printEnumFieldMapping ("$dir/Transforms/EnumFields.xml", $pkg);
-	$trans->printEnumMethodMapping ("$dir/Transforms/EnumMethods.xml", $pkg);
+	$trans->printEnumFieldMapping ("$dir/Transforms/EnumFields.xml", "$dir/obj/Debug/api.xml", $pkg);
+	$trans->printEnumMethodMapping ("$dir/Transforms/EnumMethods.xml", "$dir/obj/Debug/api.xml", $pkg);
 	$trans->printMetadata ("$dir/Transforms/Metadata.xml", "$dir/obj/Debug/api.xml", $pkg);
 }
 

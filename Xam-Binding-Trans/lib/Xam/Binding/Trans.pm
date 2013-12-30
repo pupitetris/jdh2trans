@@ -138,6 +138,24 @@ sub parse {
 	$self->{METHODS} = $self->_parse_methods ($self->{CLASSES});
 }
 
+sub _xpath_open {
+	my $self = shift;
+	my $xml_file = shift;
+
+	$self->{XPATH_CACHE} = {} if (!exists $self->{XPATH_CACHE});
+
+	my $cache = $self->{XPATH_CACHE};
+	my $xs;
+	
+	$xs = $cache->{$xml_file};
+	if (!$xs) {
+		$xs = XML::XPath->new (filename => $xml_file);
+		$cache->{$xml_file} = $xs;
+	}
+
+	return $xs;
+}
+
 sub _selectPrintPackages {
 	my $self = shift;
 	my @packages = @_;
@@ -207,18 +225,23 @@ sub xpath_check_path {
 	return 0;
 }
 
-=head2 $obj->printEnumFieldMapping (xml_file, packages ...)
+=head2 $obj->printEnumFieldMapping (xml_file, api_file, packages ...)
 
 Write an EnumFields.xml mapping file for the given packages at the xml_file location. All loaded packages
-will be processed if no packages are specified.
+will be processed if no packages are specified. api_file is the api.xml file produced by Xamarin Studio
+after compiling the binding package; use the empty string if none is available.
 
 =cut
 
 sub printEnumFieldMapping {
 	my $self = shift;
 	my $xml_file = shift;
+	my $api_file = shift;
 
 	my @packages = $self->_selectPrintPackages (@_);
+
+	my $xp;
+	$xp = $self->_xpath_open ($api_file) if $api_file;
 
 	my $fd;
 	if (ref $xml_file eq 'GLOB') {
@@ -266,18 +289,23 @@ sub printEnumFieldMapping {
 	print $fd "\n</enum-field-mappings>\n";
 }
 
-=head2 $obj->printEnumMethodMapping (xml_file, packages ...)
+=head2 $obj->printEnumMethodMapping (xml_file, api_file, packages ...)
 
 Write an EnumMethods.xml mapping file for the given packages at the xml_file location. All loaded packages
-will be processed if no packages are specified.
+will be processed if no packages are specified. api_file is the api.xml file produced by Xamarin Studio
+after compiling the binding package; use the empty string if none is available.
 
 =cut
 
 sub printEnumMethodMapping {
 	my $self = shift;
 	my $xml_file = shift;
+	my $api_file = shift;
 
 	my @packages = $self->_selectPrintPackages (@_);
+
+	my $xp;
+	$xp = $self->_xpath_open ($api_file) if $api_file;
 
 	my $fd;
 	if (ref $xml_file eq 'GLOB') {
@@ -369,7 +397,7 @@ sub printMetadata {
 	my @packages = $self->_selectPrintPackages (@_);
 
 	my $xp;
-	$xp = XML::XPath->new (filename => $api_file) if $api_file;
+	$xp = $self->_xpath_open ($api_file) if $api_file;
 
 	my $fd;
 	if (ref $xml_file eq 'GLOB') {
