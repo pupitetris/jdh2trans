@@ -1,5 +1,6 @@
---- Samsung.Android.Sdk.Pen/Transforms/Metadata.xml	2013-12-30 10:00:56.000000000 -0600
-+++ Samsung.Android.Sdk.Pen/Transforms/x/Metadata.xml	2013-12-30 09:59:50.000000000 -0600
+diff -u -r Samsung.Android.Sdk.Pen/Transforms/Metadata.xml Samsung.Android.Sdk.Pen/Transforms/x/Metadata.xml
+--- Samsung.Android.Sdk.Pen/Transforms/Metadata.xml	2013-12-31 00:03:21.000000000 -0600
++++ Samsung.Android.Sdk.Pen/Transforms/x/Metadata.xml	2013-12-31 00:01:49.000000000 -0600
 @@ -8,6 +8,12 @@
  		<attr path="/api/package[@name='com.samsung.android.sdk.pen.recognition']" name="managedName">Samsung.AndroidSdk.Pen.Recognition</attr>
  		<attr path="/api/package[@name='com.samsung.android.sdk.pen.settingui']" name="managedName">Samsung.AndroidSdk.Pen.Settingui</attr>
@@ -13,9 +14,9 @@
  	<!-- Parameter names -->
  		<!-- Package com.samsung.android.sdk.pen -->
  			<!-- Class Spen -->
-@@ -3277,4 +3283,64 @@
- 					<attr path="/api/package[@name='com.samsung.android.sdk.pen.engine']/class[@name='SpenView']/method[@name='setPageDoc' and count(parameter)=4][1]/parameter[position()=3]"
- 						name="enumType">Samsung.AndroidSdk.Pen.Engine.SpenViewPageTransitionEffectType</attr>
+@@ -3191,4 +3197,64 @@
+ 					<attr path="/api/package[@name='com.samsung.android.sdk.pen.document']/class[@name='SpenPageDoc']/method[@name='getObjectList' and count(parameter)=3 and parameter[1][@type='int'] and parameter[2][@type='java.lang.String'] and parameter[3][@type='java.lang.String']]/parameter[position()=1]"
+ 						name="enumType">Samsung.AndroidSdk.Pen.Document.SpenPageDocFindType</attr>
  
 +	<!-- The type `Samsung.AndroidSdk.Pen.Engine.SpenControlList' already contains a definition for `Group' -->
 +		<attr path="/api/package[@name='com.samsung.android.sdk.pen.engine']/class[@name='SpenControlList.Group']"
