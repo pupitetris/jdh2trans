@@ -207,7 +207,7 @@ sub xpath_method_path {
 		my $i = 0;
 		while ($i < $param_count) {
 			my $param = $meth->{PARAMS}[$i];
-			my $type = (ref $param->{TYPE} eq 'ENUM' && $param->{TYPE_ORIG})? $param->{TYPE_ORIG}: $param->{TYPE};
+			my $type = (ref $param->{TYPE} eq 'ENUM')? 'int': $param->{TYPE};
 			$i++;
 			$param_path .= " and parameter[$i][\@type='$type']";
 		}
@@ -1320,7 +1320,7 @@ sub _parse_proto {
 	$str =~ s/[\xA0 \r\n]+/ /g; # collapse white space.
 
 	# get visibility, return value and parameters
-	$str =~ /^(public|protected|) ?(static|) ?(?:([^ ]*) )?([^(]+)\(([^)]*)\)/;
+	$str =~ /^(?:\@Deprecated|) ?(public|protected|) ?(static|) ?(?:([^ ]*) )?([^(]+)\(([^)]*)\)/;
 
 	# The matched string. Not using $& because it causes regexp engine to become slow.
 	my $proto_str = substr ($str, $-[0], $+[0] - $-[0]);
