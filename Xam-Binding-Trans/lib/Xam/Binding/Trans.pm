@@ -203,16 +203,16 @@ sub xpath_method_path {
 
 	my $param_count = scalar @{$meth->{PARAMS}};
 	my $param_path = "count(parameter)=$param_count";
-	$i = 0;
+	my $i = 0;
 	while ($i < $param_count) {
 		my $param = $meth->{PARAMS}[$i];
-		my $type = $param->{TYPE_ORIG}? $param->{TYPE_ORIG}: $param->{TYPE};
+		my $type = (ref $param->{TYPE} eq 'ENUM' && $param->{TYPE_ORIG})? $param->{TYPE_ORIG}: $param->{TYPE};
 		$i++;
 		$param_path .= " and parameter[$i][\@type='$type']";
 	}
 
 	return xpath_class_path ($meth->{CLASS}) .
-		"/$meth->{TYPE}[" . (($meth->{TYPE} eq 'constructor')? '': "\@name='$meth->{NAME} and ") .
+		"/$meth->{TYPE}\[" . (($meth->{TYPE} eq 'constructor')? '': "\@name='$meth->{NAME}' and ") .
 		"$param_path]";
 }
 
@@ -1341,7 +1341,7 @@ sub _parse_proto {
 			next;
 		}
 
-		$new_type = $self->_type_qualify ($param_type, $class, \@anchors, $ul, $param_no, $name, $param_name);
+		my $new_type = $self->_type_qualify ($param_type, $class, \@anchors, $ul, $param_no, $name, $param_name);
 
 		# Creating new param
 		my $param = {
