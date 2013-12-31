@@ -267,10 +267,10 @@ sub printEnumFieldMapping {
 	foreach my $pkgname (@packages) {
 		my $pkg = $self->{PACKAGES}{$pkgname};
 		croak "Package $pkgname not found" if !$pkg;
-		print $fd "\n\n\t<!-- Package $pkgname -->\n";
 		my $jni_pkg = pkgname_to_jni ($pkgname);
 		my $clr_pkg = pkgname_to_clr ($pkgname);
 
+		my $found_in_pkg = 0;
 		foreach my $class_key (sort keys %{$pkg->{CLASSES}}) {
 			my $class = $pkg->{CLASSES}{$class_key};
 			my $classname = $class->{NAME};
@@ -281,19 +281,32 @@ sub printEnumFieldMapping {
 
 			foreach my $enum_key (sort keys %{$class->{ENUMS}}) {
 				my $enum = $class->{ENUMS}{$enum_key};
-
-				print $fd "\n\t<mapping\n";
-				print $fd "\t\tclr-enum-type=\"$clr_pkg.$name_prefix" . 
-					name_const_to_camel ($enum->{NAME}) . "\"\n";
-				print $fd "\t\tjni-$class->{TYPE}=\"$jni_pkg/$classname\">\n\n";
 				
+				my $found_in_enum = 0;
 				foreach my $val (sort numeric keys %{$enum->{PAIRS}}) {
 					my $pair = $enum->{PAIRS}{$val};
+
+					if (!$found_in_pkg) {
+						$found_in_pkg = 1;
+						print $fd "\n\n\t<!-- Package $pkgname -->\n";
+					}
+					
+					if (!$found_in_enum) {
+						$found_in_enum = 1;
+						print $fd "\n\t<mapping\n";
+						print $fd "\t\tclr-enum-type=\"$clr_pkg.$name_prefix" . 
+							name_const_to_camel ($enum->{NAME}) . "\"\n";
+						print $fd "\t\tjni-$class->{TYPE}=\"$jni_pkg/$classname\">\n\n";
+					}
+
 					print $fd "\t\t<field value=\"$val\" jni-name=\"$pair->{CONST}{NAME}\" clr-name=\"" . 
 						name_const_to_camel ($pair->{NAME}) . "\" />\n";
 				}
 
-				print $fd "\t</mapping>\n";
+				if ($found_in_enum) {
+					print $fd "\t</mapping>\n";
+				}
+
 			}
 		}
 	}
@@ -331,15 +344,15 @@ sub printEnumMethodMapping {
 	foreach my $pkgname (@packages) {
 		my $pkg = $self->{PACKAGES}{$pkgname};
 		croak "Package $pkgname not found" if !$pkg;
-		print $fd "\n\n\t<!-- Package $pkgname -->\n";
 		my $jni_pkg = pkgname_to_jni ($pkgname);
 
+		my $found_in_pkg = 0;
 		foreach my $class_key (sort keys %{$pkg->{CLASSES}}) {
 			my $class = $pkg->{CLASSES}{$class_key};
 			my $classname = $class->{NAME};
 			my $jni_class = "$jni_pkg/$classname";
-			my $mapping_flag = 0; # We only print mapping tag if we find a suitable method.
 
+			my $mapping_flag = 0; # We only print mapping tag if we find a suitable method.
 			foreach my $h ($class->{CTORS}, $class->{METHODS}) {
 				foreach my $meth_key (sort keys %$h) {
 					next if $meth_key !~ /enum:/;
@@ -347,6 +360,11 @@ sub printEnumMethodMapping {
 
 					# Method name is ambiguous and we have to do the transform in Metadata.xml.
 					next if $class->{HIST}{"$meth->{NAME}-" . scalar @{$meth->{PARAMS}}} > 1;
+
+					if (!$found_in_pkg) {
+						$found_in_pkg = 1;
+						print $fd "\n\n\t<!-- Package $pkgname -->\n";
+					}
 
 					if (!$mapping_flag) {
 						$mapping_flag = 1;
