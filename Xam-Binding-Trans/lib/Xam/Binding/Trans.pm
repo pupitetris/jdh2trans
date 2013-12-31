@@ -203,11 +203,13 @@ sub xpath_method_path {
 
 	my $param_count = scalar @{$meth->{PARAMS}};
 	my $param_path = "count(parameter)=$param_count";
-	if ($param_count > 0 && $meth->{CLASS}{HIST}{$meth->{NAME}} > 1) {
+	if ($param_count > 0 && $meth->{CLASS}{HIST}{"$meth->{NAME}-" . scalar @{$meth->{PARAMS}}} > 1) {
 		my $i = 0;
 		while ($i < $param_count) {
 			my $param = $meth->{PARAMS}[$i];
 			my $type = (ref $param->{TYPE} eq 'ENUM')? 'int': $param->{TYPE};
+			$type =~ s/>/&gt;/g;
+			$type =~ s/</&lt;/g;
 			$i++;
 			$param_path .= " and parameter[$i][\@type='$type']";
 		}
@@ -344,7 +346,7 @@ sub printEnumMethodMapping {
 					my $meth = $h->{$meth_key};
 
 					# Method name is ambiguous and we have to do the transform in Metadata.xml.
-					next if $class->{HIST}{$meth->{NAME}} > 1;
+					next if $class->{HIST}{"$meth->{NAME}-" . scalar @{$meth->{PARAMS}}} > 1;
 
 					if (!$mapping_flag) {
 						$mapping_flag = 1;
@@ -446,21 +448,23 @@ sub printMetadata {
 					my $meth_path = xpath_method_path ($meth);
 					next if !xpath_check_path ($xp, $meth_path);
 
-					if (!$found_in_class) {
-						$found_in_class = 1;
-						print $fd "\t\t\t<!-- " . 
-							(($class->{TYPE} eq 'interface')? 'Interface': 'Class') .
-							" $class->{NAME} -->\n";
-					}
+					if (scalar @{$meth->{PARAMS}} > 0) {
+						if (!$found_in_class) {
+							$found_in_class = 1;
+							print $fd "\t\t\t<!-- " . 
+								(($class->{TYPE} eq 'interface')? 'Interface': 'Class') .
+								" $class->{NAME} -->\n";
+						}
 
-					print $fd "\t\t\t\t<!-- Method $meth->{PROTO} -->\n";
-					foreach my $param (@{$meth->{PARAMS}}) {
-						my $path = "$meth_path/parameter[position()=$param->{POS}]";
-						if (xpath_check_path ($xp, $path)) {
-							print $fd "\t\t\t\t\t<attr path=\"$path\"\n";
+						print $fd "\t\t\t\t<!-- " . 
+							(($meth->{TYPE} eq 'constructor')? 'Constructor': 'Method') .
+							" $meth->{PROTO} -->\n";
+						foreach my $param (@{$meth->{PARAMS}}) {
+							print $fd "\t\t\t\t\t<attr path=\"$meth_path/parameter[position()=$param->{POS}]\"\n";
 							print $fd "\t\t\t\t\t\tname=\"name\">$param->{NAME}</attr>\n";
 						}
 					}
+
 				}
 			}
 		}
@@ -531,7 +535,7 @@ sub printMetadata {
 					my $meth = $h->{$meth_key};
 					my $methname = $meth->{NAME};
 					
-					next if $class->{HIST}{$methname} < 2; # Method has to be an overload.
+					next if $class->{HIST}{"$methname-" . scalar @{$meth->{PARAMS}}} < 2; # Method has to be an overload.
 
 					if (!$found_overloads) {
 						$found_overloads = 1;
@@ -1647,7 +1651,7 @@ sub _parse_methods_for_class {
 			my $proto = $self->_parse_proto ($ul, $class);
 			$ctors{$proto->{FULLNAME}} = $proto;
 			$methods->{$proto->{FULLNAME}} = $proto;
-			$hist{$proto->{NAME}} ++;
+			$hist{"$proto->{NAME}-" . scalar @{$proto->{PARAMS}}} ++;
 		}
 	}
 
@@ -1657,7 +1661,7 @@ sub _parse_methods_for_class {
 			my $proto = $self->_parse_proto ($ul, $class);
 			$new_methods{$proto->{FULLNAME}} = $proto;
 			$methods->{$proto->{FULLNAME}} = $proto;
-			$hist{$proto->{NAME}} ++;
+			$hist{"$proto->{NAME}-" . scalar @{$proto->{PARAMS}}} ++;
 		}
 	}
 
