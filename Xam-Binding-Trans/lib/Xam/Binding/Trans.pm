@@ -591,13 +591,12 @@ sub printMetadata {
 					}
 
 					if (ref $meth->{RETURN} eq 'ENUM') {
-						# Fixme: this is just a supposition.
 						my $clr_prefix = $meth->{RETURN}{CLASS}{NAME};
 						$clr_prefix =~ s/\.//g;
 						$clr_prefix = pkgname_to_clr ($meth->{RETURN}{PKG}) . ".$clr_prefix";
 
 						print $fd "\t\t\t\t\t<attr path=\"$meth_path\"\n";
-						print $fd "\t\t\t\t\t\tname=\"return\">$clr_prefix" . 
+						print $fd "\t\t\t\t\t\tname=\"managedReturn\">$clr_prefix" . 
 							name_const_to_camel ($meth->{RETURN}{NAME}) . "</attr>\n";
 					}
 				}
