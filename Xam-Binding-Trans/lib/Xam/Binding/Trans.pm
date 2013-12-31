@@ -203,12 +203,14 @@ sub xpath_method_path {
 
 	my $param_count = scalar @{$meth->{PARAMS}};
 	my $param_path = "count(parameter)=$param_count";
-	my $i = 0;
-	while ($i < $param_count) {
-		my $param = $meth->{PARAMS}[$i];
-		my $type = (ref $param->{TYPE} eq 'ENUM' && $param->{TYPE_ORIG})? $param->{TYPE_ORIG}: $param->{TYPE};
-		$i++;
-		$param_path .= " and parameter[$i][\@type='$type']";
+	if ($param_count > 0 && $meth->{CLASS}{HIST}{$meth->{NAME}} > 1) {
+		my $i = 0;
+		while ($i < $param_count) {
+			my $param = $meth->{PARAMS}[$i];
+			my $type = (ref $param->{TYPE} eq 'ENUM' && $param->{TYPE_ORIG})? $param->{TYPE_ORIG}: $param->{TYPE};
+			$i++;
+			$param_path .= " and parameter[$i][\@type='$type']";
+		}
 	}
 
 	return xpath_class_path ($meth->{CLASS}) .
@@ -220,8 +222,16 @@ sub xpath_check_path {
 	my $xp = shift;
 	my $path = shift;
 	
-	return 1 if !$xp || $xp->exists ($path);
-	print STDERR "Metadata: Path $path matches no nodes.\n";
+	return 1 if !$xp;
+
+	my @nodes = $xp->findnodes ($path);
+    return 1 if scalar @nodes == 1;
+	
+	if (scalar @nodes == 0) {
+		print STDERR "Metadata: ! $path matches no nodes.\n";
+	} elsif (scalar @nodes > 1) {
+		print STDERR "Metadata: > $path matches more than one node.\n";
+	}
 	return 0;
 }
 
