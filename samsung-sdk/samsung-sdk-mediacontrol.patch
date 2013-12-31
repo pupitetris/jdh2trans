@@ -1,0 +1,18 @@
+diff -u -r Samsung.Android.Sdk.Mediacontrol/Transforms/Metadata.xml Samsung.Android.Sdk.Mediacontrol/Transforms/x/Metadata.xml
+--- Samsung.Android.Sdk.Mediacontrol/Transforms/Metadata.xml	2013-12-31 15:28:14.000000000 -0600
++++ Samsung.Android.Sdk.Mediacontrol/Transforms/x/Metadata.xml	2013-12-31 15:27:21.000000000 -0600
+@@ -466,4 +466,14 @@
+ 					<attr path="/api/package[@name='com.samsung.android.sdk.mediacontrol']/interface[@name='SmcProvider.ResponseListener']/method[@name='onUploadCancel' and count(parameter)=3]"
+ 						name="eventName">OnUploadCancel</attr>
+ 
++	<!-- Duplicate custom EventArgs types -->
++		<attr path="/api/package[@name='com.samsung.android.sdk.mediacontrol']/interface[@name='SmcAvPlayer.ResponseListener']/method[@name='onRequestStateInfo' and count(parameter)=3]"
++			name="argsType">RequestAvPlayerStateInfoEventArgs</attr>
++		<attr path="/api/package[@name='com.samsung.android.sdk.mediacontrol']/interface[@name='SmcImageViewer.ResponseListener']/method[@name='onRequestStateInfo' and count(parameter)=3]"
++			name="argsType">RequestImageViewerStateInfoEventArgs</attr>
++
++	<!-- Visibility issues (override) -->
++		<attr path="/api/package[@name='com.sec.android.allshare.iface']/class[@name='ISubscriber.Stub']/method[@name='onTransact' and count(parameter)=4 and parameter[1][@type='int'] and parameter[2][@type='android.os.Parcel'] and parameter[3][@type='android.os.Parcel'] and parameter[4][@type='int']]"
++			  name="visibility">protected</attr>
++
+ </metadata>

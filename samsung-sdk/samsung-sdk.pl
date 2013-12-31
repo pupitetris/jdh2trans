@@ -141,6 +141,7 @@ process_pkg ($trans, qr/^com.samsung.android.sdk.pen/, 'Samsung.Android.Sdk.Pen'
 patch ('pen');
 
 process_pkg ($trans, 'com.samsung.android.sdk.mediacontrol', 'Samsung.Android.Sdk.Mediacontrol');
+patch ('mediacontrol');
 
 process_pkg ($trans, 'com.samsung.android.sdk.multiwindow', 'Samsung.Android.Sdk.Multiwindow');
 
