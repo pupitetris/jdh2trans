@@ -369,8 +369,8 @@ diff -u -r Samsung.Android.Sdk.Visualview/Transforms/Metadata.xml Samsung.Androi
 +++ Samsung.Android.Sdk.Visualview/Transforms/x/Metadata.xml	2013-12-31 00:02:08.000000000 -0600
 @@ -3,6 +3,12 @@
  	<!-- Namespace renaming -->
- 		<attr path="/api/package[@name='com.samsung.android.sdk.visualview']" name="managedName">Samsung.AndroidSdk.Visualview</attr>
- 		<attr path="/api/package[@name='com.samsung.android.sdk.visualview.animation']" name="managedName">Samsung.AndroidSdk.Visualview.Animation</attr>
+ 		<attr path="/api/package[@name='com.samsung.android.sdk.visualview']" name="managedName">Samsung.Android.Sdk.Visualview</attr>
+ 		<attr path="/api/package[@name='com.samsung.android.sdk.visualview.animation']" name="managedName">Samsung.Android.Sdk.Visualview.Animation</attr>
 +		<attr path="/api/package[@name='com.sec.android.sviengine']" name="managedName">Sec.Android.Svi</attr>
 +		<attr path="/api/package[@name='com.sec.android.sviengine.animation']" name="managedName">Sec.Android.Svi.Animation</attr>
 +		<attr path="/api/package[@name='com.sec.android.sviengine.basetype']" name="managedName">Sec.Android.Svi.Basetype</attr>
@@ -382,7 +382,7 @@ diff -u -r Samsung.Android.Sdk.Visualview/Transforms/Metadata.xml Samsung.Androi
  		<!-- Package com.samsung.android.sdk.visualview -->
 @@ -567,4 +573,16 @@
  					<attr path="/api/package[@name='com.samsung.android.sdk.visualview.animation']/class[@name='SVBasicAnimation']/constructor[count(parameter)=3 and parameter[1][@type='int'] and parameter[2][@type='float[]'] and parameter[3][@type='float[]']]/parameter[position()=1]"
- 						name="enumType">Samsung.AndroidSdk.Visualview.Animation.SVAnimationType</attr>
+ 						name="enumType">Samsung.Android.Sdk.Visualview.Animation.SVAnimationType</attr>
  
 +	<!-- Change visibility so that the method can be found as an override -->
 +		<!-- Package com.sec.android.sviengine -->

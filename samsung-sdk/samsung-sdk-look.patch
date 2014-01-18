@@ -8,7 +8,7 @@ diff -u -r Samsung.Android.Sdk.Look/Transforms/EnumFields.xml Samsung.Android.Sd
 -	<!-- Package com.samsung.android.sdk.look.airbutton -->
 -
 -	<mapping
--		clr-enum-type="Samsung.AndroidSdk.Look.Airbutton.SlookAirButtonDirection"
+-		clr-enum-type="Samsung.Android.Sdk.Look.Airbutton.SlookAirButtonDirection"
 -		jni-class="com/samsung/android/sdk/look/airbutton/SlookAirButton">
 -
 -		<field value="8" jni-name="DIRECTION_AUTO" clr-name="Auto" />
@@ -19,7 +19,7 @@ diff -u -r Samsung.Android.Sdk.Look/Transforms/EnumFields.xml Samsung.Android.Sd
 -	</mapping>
 -
 -	<mapping
--		clr-enum-type="Samsung.AndroidSdk.Look.Airbutton.SlookAirButtonGravity"
+-		clr-enum-type="Samsung.Android.Sdk.Look.Airbutton.SlookAirButtonGravity"
 -		jni-class="com/samsung/android/sdk/look/airbutton/SlookAirButton">
 -
 -		<field value="2" jni-name="GRAVITY_AUTO" clr-name="Auto" />
@@ -31,7 +31,7 @@ diff -u -r Samsung.Android.Sdk.Look/Transforms/EnumFields.xml Samsung.Android.Sd
 -	</mapping>
 -
 -	<mapping
--		clr-enum-type="Samsung.AndroidSdk.Look.Airbutton.SlookAirButtonUiType"
+-		clr-enum-type="Samsung.Android.Sdk.Look.Airbutton.SlookAirButtonUiType"
 -		jni-class="com/samsung/android/sdk/look/airbutton/SlookAirButton">
 -
 -		<field value="0" jni-name="UI_TYPE_MENU" clr-name="Menu" />
@@ -50,7 +50,7 @@ diff -u -r Samsung.Android.Sdk.Look/Transforms/EnumFields.xml Samsung.Android.Sd
 -	<!-- Package com.samsung.android.sdk.look.writingbuddy -->
 -
 -	<mapping
--		clr-enum-type="Samsung.AndroidSdk.Look.Writingbuddy.SlookWritingBuddyTypeEditor"
+-		clr-enum-type="Samsung.Android.Sdk.Look.Writingbuddy.SlookWritingBuddyTypeEditor"
 -		jni-class="com/samsung/android/sdk/look/writingbuddy/SlookWritingBuddy">
 -
 -		<field value="0" jni-name="TYPE_EDITOR_NUMBER" clr-name="Number" />
@@ -73,27 +73,27 @@ diff -u -r Samsung.Android.Sdk.Look/Transforms/EnumMethods.xml Samsung.Android.S
 -		<method
 -			jni-name="constructor"
 -			parameter="uiType"
--			clr-enum-type="Samsung.AndroidSdk.Look.Airbutton.SlookAirButtonUiType" />
+-			clr-enum-type="Samsung.Android.Sdk.Look.Airbutton.SlookAirButtonUiType" />
 -
 -		<method
 -			jni-name="getDirection"
 -			parameter="return"
--			clr-enum-type="Samsung.AndroidSdk.Look.Airbutton.SlookAirButtonDirection" />
+-			clr-enum-type="Samsung.Android.Sdk.Look.Airbutton.SlookAirButtonDirection" />
 -
 -		<method
 -			jni-name="getGravity"
 -			parameter="return"
--			clr-enum-type="Samsung.AndroidSdk.Look.Airbutton.SlookAirButtonGravity" />
+-			clr-enum-type="Samsung.Android.Sdk.Look.Airbutton.SlookAirButtonGravity" />
 -
 -		<method
 -			jni-name="setDirection"
 -			parameter="direction"
--			clr-enum-type="Samsung.AndroidSdk.Look.Airbutton.SlookAirButtonDirection" />
+-			clr-enum-type="Samsung.Android.Sdk.Look.Airbutton.SlookAirButtonDirection" />
 -
 -		<method
 -			jni-name="setGravity"
 -			parameter="gravity"
--			clr-enum-type="Samsung.AndroidSdk.Look.Airbutton.SlookAirButtonGravity" />
+-			clr-enum-type="Samsung.Android.Sdk.Look.Airbutton.SlookAirButtonGravity" />
 -
 -	</mapping>
 -
@@ -114,9 +114,8 @@ diff -u -r Samsung.Android.Sdk.Look/Transforms/EnumMethods.xml Samsung.Android.S
 -		<method
 -			jni-name="setEditorType"
 -			parameter="type"
--			clr-enum-type="Samsung.AndroidSdk.Look.Writingbuddy.SlookWritingBuddyTypeEditor" />
+-			clr-enum-type="Samsung.Android.Sdk.Look.Writingbuddy.SlookWritingBuddyTypeEditor" />
 -
 -	</mapping>
 -
  </enum-method-mappings>
-Only in Samsung.Android.Sdk.Look/Transforms: x
