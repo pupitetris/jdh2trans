@@ -364,6 +364,31 @@ diff -u -r Samsung.Android.Sdk.Visualview/Transforms/EnumFields.xml Samsung.Andr
 +  </mapping>
 +
  </enum-field-mappings>
+diff -u -r Samsung.Android.Sdk.Visualview/Transforms/EnumMethods.xml Samsung.Android.Sdk.Visualview/Transforms/x/EnumMethods.xml
+--- Samsung.Android.Sdk.Visualview/Transforms/EnumMethods.xml	2013-12-31 00:02:58.000000000 -0600
++++ Samsung.Android.Sdk.Visualview/Transforms/x/EnumMethods.xml	2013-12-31 00:02:58.000000000 -0600
+@@ -72,6 +72,21 @@
+ 	<!-- Package com.samsung.android.sdk.visualview.animation -->
+ 
+ 	<mapping
++		jni-class="com/samsung/android/sdk/visualview/animation/SVAnimation">
++
++		<method
++			jni-name="getInterpolator"
++			parameter="return"
++			clr-enum-type="Samsung.Android.Sdk.Visualview.SVInterpolator" />
++
++		<method
++			jni-name="setInterpolator"
++			parameter="interpolator"
++			clr-enum-type="Samsung.Android.Sdk.Visualview.SVInterpolator" />
++
++	</mapping>
++
++	<mapping
+ 		jni-class="com/samsung/android/sdk/visualview/animation/SVKeyFrameAnimation">
+ 
+ 		<method
 diff -u -r Samsung.Android.Sdk.Visualview/Transforms/Metadata.xml Samsung.Android.Sdk.Visualview/Transforms/x/Metadata.xml
 --- Samsung.Android.Sdk.Visualview/Transforms/Metadata.xml	2013-12-31 00:03:00.000000000 -0600
 +++ Samsung.Android.Sdk.Visualview/Transforms/x/Metadata.xml	2013-12-31 00:02:08.000000000 -0600
@@ -380,6 +405,23 @@ diff -u -r Samsung.Android.Sdk.Visualview/Transforms/Metadata.xml Samsung.Androi
  
  	<!-- Parameter names -->
  		<!-- Package com.samsung.android.sdk.visualview -->
+@@ -433,13 +433,13 @@
+ 			<!-- Interface SVAnimation.AnimationListener -->
+ 				<!-- Method void onAnimationEnded(int aniHanle) -->
+ 					<attr path="/api/package[@name='com.samsung.android.sdk.visualview.animation']/interface[@name='SVAnimation.AnimationListener']/method[@name='onAnimationEnded' and count(parameter)=1]/parameter[position()=1]"
+-						name="name">aniHanle</attr>
++						name="name">aniHandle</attr>
+ 				<!-- Method void onAnimationRepeated(int aniHanle) -->
+ 					<attr path="/api/package[@name='com.samsung.android.sdk.visualview.animation']/interface[@name='SVAnimation.AnimationListener']/method[@name='onAnimationRepeated' and count(parameter)=1]/parameter[position()=1]"
+-						name="name">aniHanle</attr>
++						name="name">aniHandle</attr>
+ 				<!-- Method void onAnimationStarted(int aniHanle) -->
+ 					<attr path="/api/package[@name='com.samsung.android.sdk.visualview.animation']/interface[@name='SVAnimation.AnimationListener']/method[@name='onAnimationStarted' and count(parameter)=1]/parameter[position()=1]"
+-						name="name">aniHanle</attr>
++						name="name">aniHandle</attr>
+ 			<!-- Class SVAnimationSet -->
+ 				<!-- Method public boolean addAnimation(SVAnimation animation) -->
+ 					<attr path="/api/package[@name='com.samsung.android.sdk.visualview.animation']/class[@name='SVAnimationSet']/method[@name='addAnimation' and count(parameter)=1]/parameter[position()=1]"
 @@ -567,4 +573,16 @@
  					<attr path="/api/package[@name='com.samsung.android.sdk.visualview.animation']/class[@name='SVBasicAnimation']/constructor[count(parameter)=3 and parameter[1][@type='int'] and parameter[2][@type='float[]'] and parameter[3][@type='float[]']]/parameter[position()=1]"
  						name="enumType">Samsung.Android.Sdk.Visualview.Animation.SVAnimationType</attr>
